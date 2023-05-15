@@ -10,7 +10,23 @@
 #include "Pid.h"
 #include "Config.h"
 
-#define MINEPUSH_TASK_INIT_TIME 357
+//拨矿电机方向
+#define MINE_UPLOAD_MOTOR_TURN 1
+//伸爪电机方向
+#define MINE_STRETCH_MOTOR_TURN 1
+
+//任务控制间隔 2ms
+#define MINE_CONTROL_TIME_MS 2
+
+//前后的遥控器通道号码
+#define MINE_X_CHANNEL 3
+//左右的遥控器通道号码
+#define MINE_Y_CHANNEL 2
+
+#define MINE_OPEN_RC_SCALE 5 // 遥控器乘以该比例发送到can上
+
+//选择取矿机构状态 开关通道号
+#define MINE_MODE_CHANNEL 1
 
 //拨矿电机速度环PID
 #define MOTIVE_MOTOR_SPEED_PID_KP 6000.0f
@@ -26,10 +42,8 @@
 
 #define MOTOR_SPEED_TO_MINE_SPEED 0.25f
 
-
 //拨矿过程最大速度
 #define NORMAL_MAX_MINE_SPEED 4.0f //2.0
-
 
 #define rc_deadband_limit(input, output, dealine)        \
     {                                                    \
@@ -52,6 +66,25 @@ struct speed_t
     fp32 min_speed;
 };
 
+typedef enum
+{
+    MINE_ZERO_FORCE,                  //无力,电机电流控制值为0,应用于遥控器掉线或者需要底盘上电时方便推动的场合
+
+    MINE_OPEN,                        //遥控器的通道值直接转化成电机电流值发送到can总线上
+
+    MINE_CLOSE,                       //全自动，操作手没有权限控制
+                                    
+} mine_behaviour_e;                   //拨矿机构部分行为模式
+
+typedef enum
+{
+    MINE_AUTO,      //无敌的自动模式
+
+    MINE_HAND,      //用了自动模式的都说好
+
+} mine_mode_e;      //控制模式
+
+
 class MinePush {
 public:
     const RC_ctrl_t *mine_RC; //底盘使用的遥控器指针
@@ -59,26 +92,41 @@ public:
 
     uint16_t mine_last_key_v;  //遥控器上次按键
 
-    M2006_motor mine_motive_motor[2]; //底盘动力电机数据
+    mine_behaviour_e mine_behaviour_mode; //底盘行为状态机
+    mine_behaviour_e last_mine_behaviour_mode; //底盘上次行为状态机
 
-    First_order_filter chassis_cmd_slow_set_vx;        //使用一阶低通滤波减缓设定值
-    First_order_filter chassis_cmd_slow_set_vy;        //使用一阶低通滤波减缓设定值
+    mine_mode_e mine_mode; //底盘控制状态机
+    mine_mode_e last_mine_mode; //底盘上次控制状态机
+
+    M2006_motor mine_motive_motor[2]; //拨矿动力电机数据
+    M3508_motor mine_stretch_motor[2];
 
     speed_t mine_upload;        //拨矿电机速度环设置
+    speed_t stretch_motor;      //伸爪电机速度环设置
 
     void init();
+
+    void set_mode();
+
+    void behaviour_mode_set();
     
     void feedback_update();
+
+    void set_control();
+
+    //行为模式
+    void behaviour_control_set(fp32 *vx_set, fp32 *vy_set, fp32 *angle_set);
+
+    void mine_open_set_control(fp32 *vx_set, fp32 *vy_set, fp32 *wz_set);
 
     void solve();
 
     void output();
 
-    void chassis_rc_to_control_vector(fp32 *vx_set, fp32 *vy_set);
 };
 
 
-
+extern MinePush minepush;
 
 
 #endif

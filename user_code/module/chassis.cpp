@@ -443,8 +443,8 @@ void Chassis::chassis_behaviour_mode_set()
  * @brief          设置控制量.根据不同底盘控制模式，三个参数会控制不同运动.在这个函数里面，会调用不同的控制函数.
  * @param[out]     vx_set, 通常控制纵向移动.
  * @param[out]     vy_set, 通常控制横向移动.
- * @param[out]     wz_set, 通常控制旋转运动.
- * @param[in]       包括底盘所有信息.
+ * @param[out]     angle_set, 通常控制旋转运动.
+ * @param[in]      包括底盘所有信息.
  * @retval         none
  */
 void Chassis::chassis_behaviour_control_set(fp32 *vx_set, fp32 *vy_set, fp32 *angle_set)
