@@ -33,6 +33,9 @@ void MinePush::init()
     mine_upload.min_speed = -NORMAL_MAX_MINE_SPEED;
     mine_upload.max_speed = -NORMAL_MAX_MINE_SPEED;
 
+    stretch_motor.min_speed = -NORMAL_MAX_MINE_SPEED;
+    stretch_motor.max_speed = -NORMAL_MAX_MINE_SPEED;
+
     //更新一下数据
     feedback_update();
 }
@@ -51,6 +54,7 @@ void MinePush::feedback_update(){
     }
     //计算拨矿电机的速度设置值
     mine_upload.speed = mine_motive_motor[0].speed * MOTOR_SPEED_TO_MINE_SPEED;
+    stretch_motor.speed = mine_motive_motor[2].speed * MOTOR_SPEED_TO_MINE_SPEED;
 }
 
 
@@ -63,7 +67,7 @@ void MinePush::set_mode(){
  * @param[in]
  * @retval         none
  */
-void Chassis::behaviour_mode_set()
+void MinePush::behaviour_mode_set()
 {
     last_mine_behaviour_mode = mine_behaviour_mode;
     last_mine_mode = mine_mode;
@@ -188,19 +192,14 @@ void MinePush::solve()
     mine_speed[0] = mine_upload.speed_set * MINE_UPLOAD_MOTOR_TURN; 
     mine_speed[1] = -mine_upload.speed_set * MINE_UPLOAD_MOTOR_TURN; 
 
-    stretch_speed[0] = stretch_motor.speed_set * MINE_STRETCH_MOTOR_TURN; 
-    stretch_speed[1] = -stretch_motor.speed_set * MINE_STRETCH_MOTOR_TURN; 
+    mine_speed[2] = stretch_motor.speed_set * MINE_STRETCH_MOTOR_TURN; 
+    mine_speed[3] = -stretch_motor.speed_set * MINE_STRETCH_MOTOR_TURN; 
 
     if (mine_mode == MINE_HAND)
     {
-        for (i = 0; i < 2; i++)
+        for (i = 0; i < 4; i++)
         {
             mine_motive_motor[i].current_give = (int16_t)(mine_speed[i]);
-        }
-
-        for (i = 0; i < 2; i++)
-        {
-            mine_stretch_motor[i].current_give = (int16_t)(stretch_speed[i]);
         }
         // raw控制直接返回
         return;
@@ -215,5 +214,5 @@ void MinePush::solve()
 void MinePush::output()
 {
     can_receive.can_cmd_mine_motive_motor(mine_motive_motor[0].current_give, mine_motive_motor[1].current_give,
-                                          mine_stretch_motor[0].current_give, mine_stretch_motor[1].current_give);
+                                          mine_motive_motor[2].current_give, mine_motive_motor[3].current_give);
 }

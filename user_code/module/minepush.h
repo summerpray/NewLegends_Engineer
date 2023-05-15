@@ -73,7 +73,7 @@ typedef enum
     MINE_OPEN,                        //遥控器的通道值直接转化成电机电流值发送到can总线上
 
     MINE_CLOSE,                       //全自动，操作手没有权限控制
-                                    
+
 } mine_behaviour_e;                   //拨矿机构部分行为模式
 
 typedef enum
@@ -98,8 +98,7 @@ public:
     mine_mode_e mine_mode; //底盘控制状态机
     mine_mode_e last_mine_mode; //底盘上次控制状态机
 
-    M2006_motor mine_motive_motor[2]; //拨矿动力电机数据
-    M3508_motor mine_stretch_motor[2];
+    M3508_motor mine_motive_motor[4];
 
     speed_t mine_upload;        //拨矿电机速度环设置
     speed_t stretch_motor;      //伸爪电机速度环设置
