@@ -23,6 +23,15 @@ void Can_receive::get_mine_motor_measure(uint8_t num, uint8_t data[8])
     mine_motive_motor[num].speed_rpm = (uint16_t)(data[2] << 8 | data[3]);
     mine_motive_motor[num].given_current = (uint16_t)(data[4] << 8 | data[5]);
     mine_motive_motor[num].temperate = data[6];
+    mine_motive_motor[num].last_total_angle = mine_motive_motor[num].total_angle;
+    //计圈
+    if (mine_motive_motor[num].ecd - mine_motive_motor[num].last_ecd > 4096)
+        mine_motive_motor[num].round_cnt -- ;
+    else if (mine_motive_motor[num].ecd - mine_motive_motor[num].last_ecd < -4096)
+        mine_motive_motor[num].round_cnt ++ ;
+    //增量式角度环计算
+    mine_motive_motor[num].total_angle = mine_motive_motor[num].round_cnt * 8192 + mine_motive_motor[num].ecd - mine_motive_motor[num].offset_angle;
+    mine_motive_motor[num].angle_err = mine_motive_motor[num].last_total_angle - mine_motive_motor[num].total_angle;
 }
 
 /**
@@ -49,11 +58,11 @@ void Can_receive::can_cmd_mine_motive_motor(int16_t motor1, int16_t motor2, int1
     mine_can_send_data[6] = motor4 >> 8;
     mine_can_send_data[7] = motor4;
 
-    HAL_CAN_AddTxMessage(&CHASSIS_CAN, &mine_tx_message, mine_can_send_data, &send_mail_box);
+    HAL_CAN_AddTxMessage(&MINE_CAN, &mine_tx_message, mine_can_send_data, &send_mail_box);
 }
 
 /**
- * @brief          返回拨矿电机 2006电机数据指针
+ * @brief          返回拨矿电机和伸出电机数据指针
  * @param[in]      i: 电机编号,范围[0,3]
  * @retval         电机数据指针
  */

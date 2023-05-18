@@ -10,7 +10,7 @@
 
 #include "communicate_task.h"
 #include "my_test_task.h"
-#include  "chassis_task.H"
+#include "mine_task.h"
 
 #define Tiny_Stack_Size       64
 #define Small_Stack_Size      128
@@ -28,7 +28,7 @@
 
 TaskHandle_t my_test_task_handle;
 TaskHandle_t communicate_task_handle;
-TaskHandle_t chassis_task_handle;
+TaskHandle_t mine_task_handle;
 
 
 /**
@@ -51,7 +51,7 @@ void Task_start(void)
 {
         /* Syetem Service init --------------*/
         /* Applications Init ----------------*/
-        xTaskCreate(chassis_task, "chassis_task", Large_Stack_Size, NULL, PriorityHigh, &chassis_task_handle);
+        xTaskCreate(mine_task, "mine_task", Large_Stack_Size, NULL, PriorityHigh, &mine_task_handle);
 
         xTaskCreate(communicate_task, "communicate_task", Large_Stack_Size, NULL, PriorityHigh, &communicate_task_handle);
 

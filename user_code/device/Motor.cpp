@@ -12,3 +12,8 @@ void G6020_motor::init(const motor_measure_t *motor_measure_)
 {
     motor_measure = motor_measure_;
 }
+
+void Mine_motor::init(const motor_measure_t *motor_measure_)
+{
+    motor_measure = motor_measure_;
+}

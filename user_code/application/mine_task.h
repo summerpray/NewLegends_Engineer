@@ -11,11 +11,11 @@
 
 
 /**
-  * @brief          chassis_task
+  * @brief          mine_task
   * @param[in]      pvParameters: NULL
   * @retval         none
   */
-extern void chassis_task(void *pvParameters);
+extern void mine_task(void *pvParameters);
 
 
 

@@ -1,10 +1,8 @@
 #include "Ui.h"
 #include "string.h"
 #include "arm_math.h"
-#include "chassis.h"
 #include "Can_receive.h"
 Can_receive can_receive;
-extern Super_Cap cap;
 extern bool_t top_switch;
 bool_t fric_switch;
 bool_t auto_ready_switch;
@@ -105,68 +103,13 @@ void Ui::run()  //运行主函数
 
 void Ui::feedback_update(){
 /*-----------------------------------------数据处理----------------------------------------------*/	
-	 fric_switch = can_receive.chassis_receive.fric_state;//摩擦轮标识符
-	 auto_ready_switch = can_receive.chassis_receive.auto_state;//自瞄开启标识符
-//	 pitch_angle = can_receive.chassis_receive.gimbal_pitch_angle;//pitch轴角度获取
-
-
-	 super_num =cap.super_number ;//超电数值
-
-
-	 Float_Draw(&G_SUPER_NUM, "015", UI_Graph_Change, 8, UI_Color_White, 20, 3, 2, 300, 600, super_num);
-   UI_ReFresh(1, G_SUPER_NUM);
-	//小陀螺功能
-	   if (top_switch)
-   {
-      Rectangle_Draw(&G_TOP, "009", UI_Graph_Change, 8, UI_Color_Yellow, 10, 565, 305, 575, 315);
-		  UI_ReFresh(1, G_TOP);
-   }
-	 else
-	 {
-		  Rectangle_Draw(&G_TOP, "009", UI_Graph_Change, 8, UI_Color_White, 10, 565, 305, 575, 315);
-		  UI_ReFresh(1, G_TOP);
-	 }
+	 
 
 
 
-	 //摩擦轮
-	if(fric_switch)
-   {
-      Rectangle_Draw(&G_SHOOT, "008", UI_Graph_Change, 8, UI_Color_Yellow, 10, 550, 265, 560, 275);
-		  UI_ReFresh(1, G_SHOOT);
-   }
-	 else
-	{
-		  Rectangle_Draw(&G_SHOOT, "008", UI_Graph_Change, 8, UI_Color_White, 10, 550, 265, 560, 275);
-		  UI_ReFresh(1, G_SHOOT);
-	}
 
 
-	 //自瞄是否准备好
-	 	 	 if(auto_ready_switch)
-   {
-     Rectangle_Draw(&G_AUTO_READY, "011", UI_Graph_Change, 8, UI_Color_White, 10, 540, 345, 550, 355);
-		  UI_ReFresh(1, G_AUTO_READY);
-   }
-	 else
-	 {
-		  Rectangle_Draw(&G_AUTO_READY, "011", UI_Graph_Change, 8, UI_Color_White, 10, 540, 345, 550, 355);
-		  UI_ReFresh(1, G_AUTO_READY);
-	 }
-
-
-    //超电
-	 	 	 if(super_cap_switch)
-   {
-     Rectangle_Draw(&G_SUPER_CAP, "013", UI_Graph_Change, 8, UI_Color_Yellow, 10, 625, 385, 635, 395);
-		  UI_ReFresh(1,G_SUPER_CAP);
-   }
-	 else
-	 {
-		   Rectangle_Draw(&G_SUPER_CAP, "013", UI_Graph_Change, 8, UI_Color_White, 10, 625, 385, 635, 395);
-		  UI_ReFresh(1, G_SUPER_CAP);
-	 }
-
+	
 
 	 
 }

@@ -3,11 +3,7 @@
 #include "cmsis_os.h"
 
 
-void Super_Cap::init() {
 
-can_receive.can_cmd_super_cap_power(12000);
-    
-}
 
 void Super_Cap::cap_read_data(float _input_vot, float _cap_vot, float _input_current, float _target_power)
 {

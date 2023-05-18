@@ -4,27 +4,6 @@
 #include "Pid.h"
 #include "Can_receive.h"
 
-//2006电机
-class M2006_motor
-{
-public:
-    const motor_measure_t *motor_measure;
-    //速度环pid和角度环pid, 用户可以选择性开启
-    Pid speed_pid;
-    Pid angle_pid;
-
-
-    fp32 accel;
-    fp32 speed;
-    fp32 speed_set;
-
-    fp32 current_set;
-    int16_t current_give;
-
-    void init(const motor_measure_t *motor_measure_);
-} ;
-
-
 //m3508电机
 class M3508_motor
 {
@@ -34,18 +13,19 @@ public:
     Pid speed_pid;
     Pid angle_pid;
 
-
-    fp32 accel;
+    fp32 angle;
+    fp32 angle_set;
     fp32 speed;
     fp32 speed_set;
 
     fp32 current_set;
     int16_t current_give;
 
+    
     void init(const motor_measure_t *motor_measure_);
 } ;
 
-//m3508电机
+//m6020电机
 class G6020_motor
 {
 public:
@@ -69,5 +49,31 @@ public:
 
     void init(const motor_measure_t *motor_measure_);
 };
+
+class Mine_motor
+{
+public:
+    const motor_measure_t *motor_measure;
+    //初始化电机控制模式
+
+    //速度环pid和角度环pid, 用户可以选择性开启
+    Pid speed_pid;
+    Pid angle_pid;
+
+    uint16_t offset_ecd; //用户定义的初始中值
+
+    fp32 angle;     //rad
+    fp32 angle_set; //rad
+    fp32 speed;
+    fp32 speed_set;
+    fp32 current_set;
+    fp32 target;
+    int16_t current_give;
+
+    
+
+    void init(const motor_measure_t *motor_measure_);
+};
+
 
 #endif

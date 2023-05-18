@@ -8,8 +8,7 @@
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 
-#define CHASSIS_CAN hcan2
-#define BOARD_COM_CAN hcan1
+#define MINE_CAN hcan2
 
 /* CAN send and receive ID */
 typedef enum
@@ -33,6 +32,12 @@ typedef struct
   int16_t given_current;
   uint8_t temperate;
   int16_t last_ecd;
+
+  uint16_t offset_angle;     //补偿角度
+	int32_t  round_cnt;        //转子转动圈数
+	int32_t  total_angle;      //转子转动总角度
+	int32_t  last_total_angle;
+	int32_t  angle_err;
 } motor_measure_t;
 
 // TODO 超电还未对接
@@ -71,7 +76,7 @@ class Can_receive
 {
 public:
   //动力电机反馈数据结构体
-  motor_measure_t mine_motive_motor[2];
+  motor_measure_t mine_motive_motor[4];
 
   //发送数据结构体
   CAN_TxHeaderTypeDef mine_tx_message;

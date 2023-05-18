@@ -27,6 +27,8 @@
 
 //选择取矿机构状态 开关通道号
 #define MINE_MODE_CHANNEL 1
+//选择取矿机构状态 开关通道号
+#define STRETCH_MODE_CHANNEL 0
 
 //拨矿电机速度环PID
 #define MOTIVE_MOTOR_SPEED_PID_KP 6000.0f
@@ -34,6 +36,13 @@
 #define MOTIVE_MOTOR_SPEED_PID_KD 2.0f
 #define MOTIVE_MOTOR_SPEED_PID_MAX_IOUT 2000.0f
 #define MOTIVE_MOTOR_SPEED_PID_MAX_OUT 6000.0f
+
+//拨矿电机角度环PID
+#define MOTIVE_MOTOR_ANGLE_PID_KP 30.0f 
+#define MOTIVE_MOTOR_ANGLE_PID_KI 0.1f
+#define MOTIVE_MOTOR_ANGLE_PID_KD 2.0f
+#define MOTIVE_MOTOR_ANGLE_PID_MAX_IOUT 1.0f
+#define MOTIVE_MOTOR_ANGLE_PID_MAX_OUT 40.0f
 
 //m3508转化成底盘速度(m/s)的比例，
 #define M3508_MOTOR_RPM_TO_VECTOR 0.000415809748903494517209f
@@ -44,6 +53,11 @@
 
 //拨矿过程最大速度
 #define NORMAL_MAX_MINE_SPEED 4.0f //2.0
+
+//伸爪最大速度
+#define NORMAL_MAX_STRETCH_SPEED 4.0f //2.0
+//遥控器输入死区，因为遥控器存在差异，摇杆在中间，其值不一定为零
+#define RC_DEADBAND 10
 
 #define rc_deadband_limit(input, output, dealine)        \
     {                                                    \
@@ -65,6 +79,14 @@ struct speed_t
     fp32 max_speed;
     fp32 min_speed;
 };
+
+typedef enum
+{
+    MINE_PUSH_LEFT_ID = 0,
+    MINE_PUSH_RIGHT_ID,
+    MINE_STRETCH_LEFT_ID,
+    MINE_STRETCH_RIGHT_ID,
+};                   
 
 typedef enum
 {
@@ -98,10 +120,7 @@ public:
     mine_mode_e mine_mode; //底盘控制状态机
     mine_mode_e last_mine_mode; //底盘上次控制状态机
 
-    M3508_motor mine_motive_motor[4];
-
-    speed_t mine_upload;        //拨矿电机速度环设置
-    speed_t stretch_motor;      //伸爪电机速度环设置
+    Mine_motor mine_motive_motor[4];
 
     void init();
 
@@ -114,9 +133,13 @@ public:
     void set_control();
 
     //行为模式
-    void behaviour_control_set(fp32 *vx_set, fp32 *vy_set, fp32 *angle_set);
+    void behaviour_control_set(fp32 *vx_set, fp32 *vy_set);
 
-    void mine_open_set_control(fp32 *vx_set, fp32 *vy_set, fp32 *wz_set);
+    void mine_open_set_control(fp32 *vx_set, fp32 *vy_set);
+
+    void motor_set_control(Mine_motor *motor);
+
+    void mine_angle_control(int32_t *add);
 
     void solve();
 
