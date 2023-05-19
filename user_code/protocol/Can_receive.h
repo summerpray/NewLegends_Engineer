@@ -34,43 +34,11 @@ typedef struct
   int16_t last_ecd;
 
   uint16_t offset_angle;     //补偿角度
-	int32_t  round_cnt;        //转子转动圈数
-	int32_t  total_angle;      //转子转动总角度
-	int32_t  last_total_angle;
-	int32_t  angle_err;
+	fp32  round_cnt;        //转子转动圈数
+	fp32  total_angle;      //转子转动总角度
+	fp32  last_total_angle;
+	fp32  angle_err;
 } motor_measure_t;
-
-// TODO 超电还未对接
-//  //rm motor data
-//  typedef struct
-//  {
-//    fp32 input_vot;
-//    fp32 supercap_vot;
-//    fp32 input_current;
-//    fp32 target_power;
-//  } super_cap_measure_t;
-
-//底盘接收数据结构体
-typedef struct
-{
-  //遥控器数据
-  int16_t ch_0;
-  int16_t ch_2;
-  int16_t ch_3;
-  uint16_t v;
-
-  //云台状态
-  uint8_t s1;
-  uint8_t gimbal_behaviour;
-  fp32 gimbal_yaw_angle;
-
-  // UI状态
-  fp32 gimbal_pitch_angle;
-  bool_t auto_state;
-  bool_t aim_state;
-  bool_t fric_state;
-} chassis_receive_t;
-
 
 class Can_receive
 {

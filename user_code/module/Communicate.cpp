@@ -77,7 +77,7 @@ extern "C"
 				{
 					static int j;
 					j = rx_header.StdId - CAN_MINE_FR_MOTOR_ID;
-					can_receive.get_mine_motive_motor_measure_point(j);
+					can_receive.get_mine_motor_measure(j,rx_data);
 					break;
 				}
                 default:

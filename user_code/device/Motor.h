@@ -14,7 +14,6 @@ public:
     Pid angle_pid;
 
     fp32 angle;
-    fp32 angle_set;
     fp32 speed;
     fp32 speed_set;
 
@@ -62,15 +61,12 @@ public:
 
     uint16_t offset_ecd; //用户定义的初始中值
 
-    fp32 angle;     //rad
     fp32 angle_set; //rad
+    fp32 total_angle;
     fp32 speed;
     fp32 speed_set;
     fp32 current_set;
-    fp32 target;
     int16_t current_give;
-
-    
 
     void init(const motor_measure_t *motor_measure_);
 };

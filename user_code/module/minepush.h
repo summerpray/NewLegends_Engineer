@@ -139,7 +139,7 @@ public:
 
     void motor_set_control(Mine_motor *motor);
 
-    void mine_angle_control(int32_t *add);
+    void mine_angle_control(fp32 *add);
 
     void solve();
 

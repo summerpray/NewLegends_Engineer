@@ -47,14 +47,14 @@ void MinePush::init()
         mine_motive_motor[i].speed_pid.pid_clear();
 
         fp32 mine_angle_pid_parm[5] = {MOTIVE_MOTOR_ANGLE_PID_KP, MOTIVE_MOTOR_ANGLE_PID_KI, MOTIVE_MOTOR_ANGLE_PID_KD, MOTIVE_MOTOR_ANGLE_PID_MAX_IOUT, MOTIVE_MOTOR_ANGLE_PID_MAX_OUT};
-        mine_motive_motor[i].angle_pid.init(PID_ANGLE, mine_angle_pid_parm, &mine_motive_motor[i].angle, &mine_motive_motor[i].angle_set, 0);
+        mine_motive_motor[i].angle_pid.init(PID_ANGLE, mine_angle_pid_parm, &mine_motive_motor[i].total_angle , &mine_motive_motor[i].angle_set, 0);
         mine_motive_motor[i].angle_pid.pid_clear();
     }
 
     //更新一下数据
     feedback_update();
-    mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set = mine_motive_motor[MINE_STRETCH_LEFT_ID].angle;
-    mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set = mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle;
+    mine_motive_motor[MINE_STRETCH_LEFT_ID].total_angle = mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set;
+    mine_motive_motor[MINE_STRETCH_RIGHT_ID].total_angle = mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set;
 }
 
 
@@ -67,8 +67,9 @@ void MinePush::feedback_update(){
     {
         //更新动力电机速度，加速度是速度的PID微分
         mine_motive_motor[i].speed = MINE_MOTOR_RPM_TO_VECTOR_SEN * mine_motive_motor[i].motor_measure->speed_rpm  * MOTOR_SPEED_TO_MINE_SPEED;
-    }
+        mine_motive_motor[i].total_angle = mine_motive_motor[i].motor_measure->total_angle;
 
+    }
 
 }
 
@@ -125,7 +126,7 @@ void MinePush::set_control()
     //TODO:暂时只用到两个通道值，分别控制拨矿电机和伸爪电机
     //vmine_set控制拨矿电机速度，vstretch_set控制伸爪电机速度
     fp32 vmine_set = 0.0f, vstretch_set = 0.0f;
-    int32_t angle_set = 0;
+    fp32 angle_set = 0;
 
     //获取控制设置值
     behaviour_control_set(&vmine_set, &vstretch_set);
@@ -141,6 +142,8 @@ void MinePush::set_control()
     else if (mine_mode == MINE_AUTO)
     {
         mine_angle_control(&angle_set);
+        mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set += angle_set * MINE_STRETCH_MOTOR_TURN;
+        mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set -= angle_set * MINE_STRETCH_MOTOR_TURN;
     }
 }
 
@@ -271,7 +274,7 @@ void MinePush::motor_set_control(Mine_motor *motor)
  * @param[out]     add: 角度控制，为角度的增量 单位 rad
  * @retval         none
  */
-void MinePush::mine_angle_control(int32_t *add)
+void MinePush::mine_angle_control(fp32 *add)
 {
     add = 0;
     if (add == NULL)
@@ -281,10 +284,10 @@ void MinePush::mine_angle_control(int32_t *add)
 
     if (switch_is_up(mine_RC->rc.s[MINE_MODE_CHANNEL])) //伸出模式
     {
-        *add = 100000;
+        *add = 100000.0f;
     }
     else
     {
-        *add = -100000;
+        *add = -100000.0f;
     }
 }
