@@ -11,23 +11,12 @@
 #define CHASSIS_REMOTE_OPEN 0
 
 /*---------------------按键---------------------------*/
-//底盘小陀螺 单击F
-#define KEY_PRESSED_CHASSIS_TOP     'F'
+//伸出机构 单击F
+#define KEY_PRESSED_STRETCH_STATE     'F'
 
-//底盘摇摆  单击C
-#define KEY_PRESSED_CHASSIS_SWING   'C'
+//初始模式 单击G
+#define KEY_PRESSED_INIT_STATE     'G'
 
-//底盘45度角 单击V
-#define KEY_PRESSED_CHASSIS_PISA    'V'
-
-//底盘超级电容加速 单击SHIFT !代表shift
-#define KEY_PRESSED_CHASSIS_SUPER_CAP    '!'
-
-//底盘前后左右控制按键
-#define KEY_PRESSED_CHASSIS_FRONT  'W'
-#define KEY_PRESSED_CHASSIS_BACK   'S'
-#define KEY_PRESSED_CHASSIS_LEFT   'A'
-#define KEY_PRESSED_CHASSIS_RIGHT  'D'
 //初始化UI界面
 #define KEY_PRESSED_UI_UPDATE      'B'
 

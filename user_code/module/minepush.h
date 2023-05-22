@@ -53,9 +53,10 @@
 
 //拨矿过程最大速度
 #define NORMAL_MAX_MINE_SPEED 4.0f //2.0
-
 //伸爪最大速度
 #define NORMAL_MAX_STRETCH_SPEED 4.0f //2.0
+//伸爪长度
+#define STRETCH_LEN 100000.0f
 //遥控器输入死区，因为遥控器存在差异，摇杆在中间，其值不一定为零
 #define RC_DEADBAND 0
 
@@ -86,7 +87,7 @@ typedef enum
     MINE_PUSH_RIGHT_ID,
     MINE_STRETCH_LEFT_ID,
     MINE_STRETCH_RIGHT_ID,
-};                   
+};                    
 
 typedef enum
 {
@@ -121,6 +122,9 @@ public:
     mine_mode_e last_mine_mode; //底盘上次控制状态机
 
     Mine_motor mine_motive_motor[4];
+    int32_t stretch_moto_start_angle[2];
+
+    uint8_t stretch_flag;
 
     void init();
 

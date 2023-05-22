@@ -77,19 +77,26 @@ void MinePush::init()
         mine_motive_motor[i].angle_pid.pid_clear();
     }
 
-    //更新一下数据
-    feedback_update();
+    //设置初始值
+    stretch_moto_start_angle[MINE_STRETCH_LEFT_ID] = mine_motive_motor[MINE_STRETCH_LEFT_ID].total_angle;
+    stretch_moto_start_angle[MINE_STRETCH_RIGHT_ID] = mine_motive_motor[MINE_STRETCH_RIGHT_ID].total_angle;
+
     mine_motive_motor[MINE_STRETCH_LEFT_ID].max_speed = NORMAL_MAX_STRETCH_SPEED;
     mine_motive_motor[MINE_STRETCH_LEFT_ID].min_speed = -NORMAL_MAX_STRETCH_SPEED;
     mine_motive_motor[MINE_STRETCH_RIGHT_ID].max_speed = NORMAL_MAX_STRETCH_SPEED;
     mine_motive_motor[MINE_STRETCH_RIGHT_ID].min_speed = -NORMAL_MAX_STRETCH_SPEED;
     
-    mine_motive_motor[MINE_STRETCH_LEFT_ID].total_angle = 0;
-    mine_motive_motor[MINE_STRETCH_RIGHT_ID].total_angle = 0;
-    mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set = 100000;
+    stretch_flag = 0;
+
+    //更新一下数据
+    feedback_update();
 }
 
-
+/**
+ * @brief          状态更新函数
+ * @param[in]
+ * @retval         none
+ */
 void MinePush::feedback_update(){
     //记录上一次遥控器值
     mine_last_key_v = mine_RC->key.v;
@@ -101,10 +108,16 @@ void MinePush::feedback_update(){
         mine_motive_motor[i].speed = MINE_MOTOR_RPM_TO_VECTOR_SEN * mine_motive_motor[i].motor_measure->speed_rpm;
         mine_motive_motor[i].total_angle = mine_motive_motor[i].motor_measure->total_angle;
     }
-
+    // 这两个变量暂时没有用到，目的是为了伸出一半还能收回
+    mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_error = mine_motive_motor[MINE_STRETCH_LEFT_ID].total_angle - stretch_moto_start_angle[MINE_STRETCH_LEFT_ID];
+    mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_error = mine_motive_motor[MINE_STRETCH_RIGHT_ID].total_angle - stretch_moto_start_angle[MINE_STRETCH_RIGHT_ID];
 }
 
-
+/**
+ * @brief          行为切换设置
+ * @param[in]
+ * @retval         none
+ */
 void MinePush::set_mode(){
     behaviour_mode_set();
 }
@@ -170,12 +183,23 @@ void MinePush::set_control()
         mine_motive_motor[MINE_STRETCH_RIGHT_ID].speed_set = vstretch_set;
     }
     //TODO:手动写完就写个自动
-    // else if (mine_mode == MINE_AUTO)
-    // {
-    //     mine_angle_control(&angle_set);
-    //     mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set += angle_set * MINE_STRETCH_MOTOR_TURN;
-    //     mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set -= angle_set * MINE_STRETCH_MOTOR_TURN;
-    // }
+    else if (mine_mode == MINE_AUTO)
+    {
+        if (if_key_singal_pessed(mine_RC, last_mine_RC, KEY_PRESSED_STRETCH_STATE) && stretch_flag == 0)
+        {
+            mine_angle_control(&angle_set);
+            mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set = stretch_moto_start_angle[MINE_STRETCH_LEFT_ID] + angle_set * MINE_STRETCH_MOTOR_TURN;
+            mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set = stretch_moto_start_angle[MINE_STRETCH_RIGHT_ID] - angle_set * MINE_STRETCH_MOTOR_TURN;
+            stretch_flag = 1;
+        }
+        else if (if_key_singal_pessed(mine_RC, last_mine_RC, KEY_PRESSED_STRETCH_STATE) && stretch_flag == 1)
+        {
+            mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set = stretch_moto_start_angle[MINE_STRETCH_LEFT_ID];
+            mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set = stretch_moto_start_angle[MINE_STRETCH_RIGHT_ID];
+            stretch_flag = 0;
+        }
+    }
+
 }
 
 /**
@@ -305,8 +329,8 @@ void MinePush::motor_set_control(Mine_motor *motor)
 }
 
 /**
- * @brief          云台陀螺仪控制，电机是陀螺仪角度控制，
- * @param[out]     add: 角度控制，为角度的增量 单位 rad
+ * @brief          控制电机转动角度
+ * @param[out]     add: 角度增加量
  * @retval         none
  */
 void MinePush::mine_angle_control(fp32 *add)
@@ -319,10 +343,7 @@ void MinePush::mine_angle_control(fp32 *add)
 
     if (switch_is_up(mine_RC->rc.s[MINE_MODE_CHANNEL])) //伸出模式
     {
-        *add = 100000.0f;
+        *add = STRETCH_LEN;
     }
-    else
-    {
-        *add = -100000.0f;
-    }
+
 }

@@ -80,6 +80,16 @@ extern "C"
 					can_receive.get_mine_motor_measure(j,rx_data);
 					break;
 				}
+                case CAN_SPIN_R_MOTOR_ID:
+                case CAN_SPIN_L_MOTOR_ID:
+                case CAN_CATCH_YAW_MOTOR_ID:
+                case CAN_CATCH_SUCTION_MOTOR_ID:
+                {
+                    static int i;
+					i = rx_header.StdId - CAN_SPIN_R_MOTOR_ID;
+					can_receive.get_catch_motor_measure(i,rx_data);
+					break;
+                }
                 default:
                 {
                     break;

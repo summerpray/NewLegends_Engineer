@@ -59,7 +59,7 @@ public:
     Pid speed_pid;
     Pid angle_pid;
 
-    uint16_t offset_ecd; //用户定义的初始中值
+    fp32 angle_error; //状态保存变量
 
     fp32 angle_set; //rad
     fp32 total_angle;
