@@ -31,3 +31,23 @@ extern "C"
 }
 #endif
 
+
+/**
+ * @brief          遥控器的死区判断，因为遥控器的拨杆在中位的时候，不一定为0，
+ * @param          输入的遥控器值
+ * @param          输出的死区处理后遥控器值
+ * @param          死区值
+ */
+#define rc_deadband_limit(input, output, dealine)        \
+    {                                                    \
+        if ((input) > (dealine) || (input) < -(dealine)) \
+        {                                                \
+            (output) = (input);                          \
+        }                                                \
+        else                                             \
+        {                                                \
+            (output) = 0;                                \
+        }                                                \
+    }
+
+

@@ -64,9 +64,9 @@ void Pid::init(pid_mode_e mode_, const fp32 *pid_parm, fp32 *ref_, fp32 *set_, f
          data.error_delta = data.error - data.last_error;
 
      if (mode == PID_ANGLE){
-        data.error = rad_format(data.error);
+        // data.error = rad_format(data.error);
         data.error_delta = data.error - data.last_error;       
-         }
+        }
 
      data.Pout = data.Kp * data.error;
      data.Iout += data.Ki * data.error;

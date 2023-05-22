@@ -8,7 +8,7 @@
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 
-#define MINE_CAN hcan2
+#define MINE_CAN hcan1
 
 /* CAN send and receive ID */
 typedef enum

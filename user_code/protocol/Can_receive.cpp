@@ -28,7 +28,7 @@ void Can_receive::get_mine_motor_measure(uint8_t num, uint8_t data[8])
     if (mine_motive_motor[num].ecd - mine_motive_motor[num].last_ecd > 4096)
         mine_motive_motor[num].round_cnt -- ;
     else if (mine_motive_motor[num].ecd - mine_motive_motor[num].last_ecd < -4096)
-        mine_motive_motor[num].round_cnt ++ ;
+        mine_motive_motor[num].round_cnt ++ ;   
     //增量式角度环计算
     mine_motive_motor[num].total_angle = mine_motive_motor[num].round_cnt * 8192 + mine_motive_motor[num].ecd - mine_motive_motor[num].offset_angle;
     mine_motive_motor[num].angle_err = mine_motive_motor[num].last_total_angle - mine_motive_motor[num].total_angle;

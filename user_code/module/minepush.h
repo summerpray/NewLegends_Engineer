@@ -23,7 +23,7 @@
 //左右的遥控器通道号码
 #define MINE_Y_CHANNEL 2
 
-#define MINE_OPEN_RC_SCALE 5 // 遥控器乘以该比例发送到can上
+#define MINE_OPEN_RC_SCALE 100 // 遥控器乘以该比例发送到can上
 
 //选择取矿机构状态 开关通道号
 #define MINE_MODE_CHANNEL 1
@@ -31,18 +31,18 @@
 #define STRETCH_MODE_CHANNEL 0
 
 //拨矿电机速度环PID
-#define MOTIVE_MOTOR_SPEED_PID_KP 6000.0f
+#define MOTIVE_MOTOR_SPEED_PID_KP 1000.0f
 #define MOTIVE_MOTOR_SPEED_PID_KI 0.0f
-#define MOTIVE_MOTOR_SPEED_PID_KD 2.0f
-#define MOTIVE_MOTOR_SPEED_PID_MAX_IOUT 2000.0f
+#define MOTIVE_MOTOR_SPEED_PID_KD 0.1f
+#define MOTIVE_MOTOR_SPEED_PID_MAX_IOUT 2.0f
 #define MOTIVE_MOTOR_SPEED_PID_MAX_OUT 6000.0f
 
 //拨矿电机角度环PID
-#define MOTIVE_MOTOR_ANGLE_PID_KP 30.0f 
-#define MOTIVE_MOTOR_ANGLE_PID_KI 0.1f
-#define MOTIVE_MOTOR_ANGLE_PID_KD 2.0f
+#define MOTIVE_MOTOR_ANGLE_PID_KP 1000.0f 
+#define MOTIVE_MOTOR_ANGLE_PID_KI 0.0f
+#define MOTIVE_MOTOR_ANGLE_PID_KD 1.0f
 #define MOTIVE_MOTOR_ANGLE_PID_MAX_IOUT 1.0f
-#define MOTIVE_MOTOR_ANGLE_PID_MAX_OUT 40.0f
+#define MOTIVE_MOTOR_ANGLE_PID_MAX_OUT 6000.0f
 
 //m3508转化成底盘速度(m/s)的比例，
 #define M3508_MOTOR_RPM_TO_VECTOR 0.000415809748903494517209f
@@ -57,7 +57,7 @@
 //伸爪最大速度
 #define NORMAL_MAX_STRETCH_SPEED 4.0f //2.0
 //遥控器输入死区，因为遥控器存在差异，摇杆在中间，其值不一定为零
-#define RC_DEADBAND 10
+#define RC_DEADBAND 0
 
 #define rc_deadband_limit(input, output, dealine)        \
     {                                                    \

@@ -79,8 +79,14 @@ void MinePush::init()
 
     //更新一下数据
     feedback_update();
-    mine_motive_motor[MINE_STRETCH_LEFT_ID].total_angle = mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set;
-    mine_motive_motor[MINE_STRETCH_RIGHT_ID].total_angle = mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set;
+    mine_motive_motor[MINE_STRETCH_LEFT_ID].max_speed = NORMAL_MAX_STRETCH_SPEED;
+    mine_motive_motor[MINE_STRETCH_LEFT_ID].min_speed = -NORMAL_MAX_STRETCH_SPEED;
+    mine_motive_motor[MINE_STRETCH_RIGHT_ID].max_speed = NORMAL_MAX_STRETCH_SPEED;
+    mine_motive_motor[MINE_STRETCH_RIGHT_ID].min_speed = -NORMAL_MAX_STRETCH_SPEED;
+    
+    mine_motive_motor[MINE_STRETCH_LEFT_ID].total_angle = 0;
+    mine_motive_motor[MINE_STRETCH_RIGHT_ID].total_angle = 0;
+    mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set = 100000;
 }
 
 
@@ -92,9 +98,8 @@ void MinePush::feedback_update(){
     for (uint8_t i = 0; i < 4; ++i)
     {
         //更新动力电机速度，加速度是速度的PID微分
-        mine_motive_motor[i].speed = MINE_MOTOR_RPM_TO_VECTOR_SEN * mine_motive_motor[i].motor_measure->speed_rpm  * MOTOR_SPEED_TO_MINE_SPEED;
+        mine_motive_motor[i].speed = MINE_MOTOR_RPM_TO_VECTOR_SEN * mine_motive_motor[i].motor_measure->speed_rpm;
         mine_motive_motor[i].total_angle = mine_motive_motor[i].motor_measure->total_angle;
-
     }
 
 }
@@ -165,12 +170,12 @@ void MinePush::set_control()
         mine_motive_motor[MINE_STRETCH_RIGHT_ID].speed_set = vstretch_set;
     }
     //TODO:手动写完就写个自动
-    else if (mine_mode == MINE_AUTO)
-    {
-        mine_angle_control(&angle_set);
-        mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set += angle_set * MINE_STRETCH_MOTOR_TURN;
-        mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set -= angle_set * MINE_STRETCH_MOTOR_TURN;
-    }
+    // else if (mine_mode == MINE_AUTO)
+    // {
+    //     mine_angle_control(&angle_set);
+    //     mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set += angle_set * MINE_STRETCH_MOTOR_TURN;
+    //     mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set -= angle_set * MINE_STRETCH_MOTOR_TURN;
+    // }
 }
 
 /**
@@ -221,8 +226,8 @@ void MinePush::mine_open_set_control(fp32 *vx_set, fp32 *vy_set)
     rc_deadband_limit(mine_RC->rc.ch[MINE_X_CHANNEL], mine_channel, RC_DEADBAND);
     rc_deadband_limit(mine_RC->rc.ch[MINE_Y_CHANNEL], stretch_channel, RC_DEADBAND);
 
-    *vx_set = mine_RC->rc.ch[MINE_X_CHANNEL] * MINE_OPEN_RC_SCALE;
-    *vy_set = -mine_RC->rc.ch[MINE_Y_CHANNEL] * MINE_OPEN_RC_SCALE;
+    *vx_set = mine_RC->rc.ch[MINE_X_CHANNEL] / MINE_OPEN_RC_SCALE;
+    *vy_set = -mine_RC->rc.ch[MINE_Y_CHANNEL] / MINE_OPEN_RC_SCALE;
 
 }
 
@@ -234,17 +239,17 @@ void MinePush::mine_open_set_control(fp32 *vx_set, fp32 *vy_set)
  */
 void MinePush::solve()
 {
-    fp32 motive_temp_speed[4] = {0.0f, 0.0f, 0.0f, 0.0f}; //动力电机目标速度
 
     if (mine_behaviour_mode == MINE_OPEN)
     {
-        motive_temp_speed[MINE_PUSH_LEFT_ID] = mine_motive_motor[MINE_PUSH_LEFT_ID].speed_set * MINE_UPLOAD_MOTOR_TURN; 
-        motive_temp_speed[MINE_PUSH_RIGHT_ID] = -mine_motive_motor[MINE_PUSH_RIGHT_ID].speed_set * MINE_UPLOAD_MOTOR_TURN; 
-        motive_temp_speed[MINE_STRETCH_LEFT_ID] = mine_motive_motor[MINE_STRETCH_LEFT_ID].speed_set * MINE_STRETCH_MOTOR_TURN; 
-        motive_temp_speed[MINE_STRETCH_RIGHT_ID] = -mine_motive_motor[MINE_STRETCH_RIGHT_ID].speed_set * MINE_STRETCH_MOTOR_TURN; 
+
         for (int i = 0; i < 4; i++)
         {
-            mine_motive_motor[i].current_give = (int16_t)(motive_temp_speed[i]);
+            if (mine_motive_motor[i].speed_set > mine_motive_motor[i].max_speed)
+                mine_motive_motor[i].speed_set = mine_motive_motor[i].max_speed;
+            if (mine_motive_motor[i].speed_set < mine_motive_motor[i].min_speed)
+                mine_motive_motor[i].speed_set = mine_motive_motor[i].min_speed;
+            mine_motive_motor[i].current_give = mine_motive_motor[i].speed_pid.pid_calc();
         }
         // raw控制直接返回
         return;
@@ -291,7 +296,11 @@ void MinePush::motor_set_control(Mine_motor *motor)
     }
 
     motor->speed_set = motor->angle_pid.pid_calc();
-    motor->current_set = motor->speed_pid.pid_calc();
+    if (motor->speed_set > motor->max_speed)
+        motor->speed_set = motor->max_speed;
+    if (motor->speed_set < motor->min_speed)
+        motor->speed_set = motor->min_speed;
+    motor->current_give = motor->speed_pid.pid_calc();
     
 }
 

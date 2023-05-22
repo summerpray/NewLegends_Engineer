@@ -67,7 +67,8 @@ public:
     fp32 speed_set;
     fp32 current_set;
     int16_t current_give;
-
+    fp32 max_speed;
+    fp32 min_speed; 
     void init(const motor_measure_t *motor_measure_);
 };
 
