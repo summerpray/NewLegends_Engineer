@@ -178,7 +178,7 @@ void MinePush::set_control()
     if (mine_mode == MINE_HAND)
     {
         mine_motive_motor[MINE_PUSH_LEFT_ID].speed_set = vmine_set;
-        mine_motive_motor[MINE_PUSH_RIGHT_ID].speed_set = vmine_set;
+        mine_motive_motor[MINE_PUSH_RIGHT_ID].speed_set = -vmine_set;
         mine_motive_motor[MINE_STRETCH_LEFT_ID].speed_set = vstretch_set;
         mine_motive_motor[MINE_STRETCH_RIGHT_ID].speed_set = vstretch_set;
     }
@@ -199,7 +199,6 @@ void MinePush::set_control()
             stretch_flag = 0;
         }
     }
-
 }
 
 /**
@@ -235,7 +234,7 @@ void MinePush::behaviour_control_set(fp32 *vmine_set, fp32 *vstretch_set)
  * @brief          底盘开环的行为状态机下，底盘模式是raw原生状态，故而设定值会直接发送到can总线上
  * @param[in]      vx_set前进的速度,正值 前进速度， 负值 后退速度
  * @param[in]      vy_set左右的速度，正值 左移速度， 负值 右移速度
- * @param[in]      wz_set 旋转速度， 正值 逆时针旋转，负值 顺时针旋转
+ * @param[in]      wz_set旋转速度， 正值 逆时针旋转，负值 顺时针旋转
  * @param[in]      数据
  * @retval         none
  */
@@ -307,8 +306,8 @@ void MinePush::output()
 }
 
 /**
- * @brief          云台控制模式:GIMBAL_MOTOR_ENCONDE，使用编码相对角进行控制
- * @param[out]     gimbal_motor:yaw电机或者pitch电机
+ * @brief          双环pid计算
+ * @param[out]     
  * @retval         none
  */
 

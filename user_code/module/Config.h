@@ -11,11 +11,20 @@
 #define CHASSIS_REMOTE_OPEN 0
 
 /*---------------------按键---------------------------*/
-//伸出机构 单击F
-#define KEY_PRESSED_STRETCH_STATE     'F'
+//空接模式
+#define KEY_PRESSED_SKY_STATE      'Q'
 
 //初始模式 单击G
 #define KEY_PRESSED_INIT_STATE     'G'
+
+//资源岛
+#define KEY_PRESSED_STANDARD_STATE     'G'
+
+//地矿
+#define KEY_PRESSED_GROUND_STATE     'G'
+
+//兑换
+#define KEY_PRESSED_DELIVERY_STATE     'G'
 
 //初始化UI界面
 #define KEY_PRESSED_UI_UPDATE      'B'

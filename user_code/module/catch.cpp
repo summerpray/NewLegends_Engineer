@@ -74,19 +74,24 @@ void Catch::init()
         fp32 catch_angle_pid_parm[5] = {MOTIVE_MOTOR_ANGLE_PID_KP, MOTIVE_MOTOR_ANGLE_PID_KI, MOTIVE_MOTOR_ANGLE_PID_KD, MOTIVE_MOTOR_ANGLE_PID_MAX_IOUT, MOTIVE_MOTOR_ANGLE_PID_MAX_OUT};
         catch_motive_motor[i].angle_pid.init(PID_ANGLE, catch_angle_pid_parm, &catch_motive_motor[i].total_angle , &catch_motive_motor[i].angle_set, 0);
         catch_motive_motor[i].angle_pid.pid_clear();
+        
+        //设置初始值
+        moto_start_angle[i] = catch_motive_motor[i].total_angle;
+        catch_motive_motor[i].max_speed = NORMAL_MAX_STRETCH_SPEED;
+        catch_motive_motor[i].min_speed = -NORMAL_MAX_STRETCH_SPEED;
     }
+    catch_auto_mode = CATCH_INIT;
+    last_catch_auto_mode = catch_auto_mode;
 
-    //设置初始值
-    stretch_moto_start_angle[CAN_SPIN_L_MOTOR] = catch_motive_motor[CAN_SPIN_L_MOTOR].total_angle;
-    stretch_moto_start_angle[CAN_SPIN_R_MOTOR] = catch_motive_motor[CAN_SPIN_R_MOTOR].total_angle;
-
-    catch_motive_motor[CAN_SPIN_L_MOTOR].max_speed = NORMAL_MAX_STRETCH_SPEED;
-    catch_motive_motor[CAN_SPIN_L_MOTOR].min_speed = -NORMAL_MAX_STRETCH_SPEED;
-    catch_motive_motor[CAN_SPIN_R_MOTOR].max_speed = NORMAL_MAX_STRETCH_SPEED;
-    catch_motive_motor[CAN_SPIN_R_MOTOR].min_speed = -NORMAL_MAX_STRETCH_SPEED;
-    
     catch_flag = 0;
 
+    int32_t ROTATE_ANGLE[AUTO_MODE_NUM][CAN_CATCH_SUCTION_MOTOR] = {
+        {CATCH_INIT_SPIN_ANGLE, CATCH_INIT_YAW_ANGLE, CATCH_INIT_SUCTION_ANGLE},
+        {CATCH_SKY_SPIN_ANGLE, CATCH_SKY_YAW_ANGLE, CATCH_SKY_SUCTION_ANGLE},
+        {CATCH_STANDARD_SPIN_ANGLE, CATCH_STANDARD_YAW_ANGLE, CATCH_STANDARD_SUCTION_ANGLE},
+        {CATCH_GROUND_SPIN_ANGLE, CATCH_GROUND_YAW_ANGLE, CATCH_GROUND_SUCTION_ANGLE},
+        {CATCH_DELIVERY_SPIN_ANGLE, CATCH_DELIVERY_YAW_ANGLE, CATCH_DELIVERY_SUCTION_ANGLE},
+    };
     //更新一下数据
     feedback_update();
 }
@@ -108,8 +113,8 @@ void Catch::feedback_update(){
         catch_motive_motor[i].total_angle = catch_motive_motor[i].motor_measure->total_angle;
     }
     // 这两个变量暂时没有用到，目的是为了伸出一半还能收回
-    catch_motive_motor[CAN_SPIN_L_MOTOR].angle_error = catch_motive_motor[CAN_SPIN_L_MOTOR].total_angle - stretch_moto_start_angle[CAN_SPIN_L_MOTOR];
-    catch_motive_motor[CAN_SPIN_R_MOTOR].angle_error = catch_motive_motor[CAN_SPIN_R_MOTOR].total_angle - stretch_moto_start_angle[CAN_SPIN_R_MOTOR];
+    // catch_motive_motor[CAN_SPIN_L_MOTOR].angle_error = catch_motive_motor[CAN_SPIN_L_MOTOR].total_angle - stretch_moto_start_angle[CAN_SPIN_L_MOTOR];
+    // catch_motive_motor[CAN_SPIN_R_MOTOR].angle_error = catch_motive_motor[CAN_SPIN_R_MOTOR].total_angle - stretch_moto_start_angle[CAN_SPIN_R_MOTOR];
 }
 
 /**
@@ -167,52 +172,61 @@ void Catch::behaviour_mode_set()
 void Catch::set_control()
 {
     //TODO:暂时只用到两个通道值，分别控制拨矿电机和伸爪电机
-    //vcatch_set控制拨矿电机速度，vstretch_set控制伸爪电机速度
-    fp32 vcatch_set = 0.0f, vstretch_set = 0.0f;
-    fp32 angle_set = 0;
+    //vspin_set控制电机速度，vyaw_set控制电机速度, 
+    fp32 vspin_set = 0.0f, vyaw_set = 0.0f, vsuction_set = 0.0f;
 
     //获取控制设置值
-    behaviour_control_set(&vcatch_set, &vstretch_set);
+    behaviour_control_set(&vspin_set, &vyaw_set, &vsuction_set);
 
     if (catch_mode == CATCH_HAND)
     {
-        catch_motive_motor[CATCH_PUSH_LEFT_ID].speed_set = vcatch_set;
-        catch_motive_motor[CATCH_PUSH_RIGHT_ID].speed_set = vcatch_set;
-        catch_motive_motor[CAN_SPIN_L_MOTOR].speed_set = vstretch_set;
-        catch_motive_motor[CAN_SPIN_R_MOTOR].speed_set = vstretch_set;
+        //同轴有一个是相反的
+        catch_motive_motor[CAN_SPIN_L_MOTOR].speed_set = vspin_set;
+        catch_motive_motor[CAN_SPIN_R_MOTOR].speed_set = -vspin_set;
+        catch_motive_motor[CAN_CATCH_YAW_MOTOR].speed_set = vyaw_set;
+        catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].speed_set = vsuction_set;
     }
     //TODO:手动写完就写个自动
     else if (catch_mode == CATCH_AUTO)
     {
-        if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_STRETCH_STATE) && stretch_flag == 0)
+        if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_SKY_STATE))
         {
-            catch_angle_control(&angle_set);
-            catch_motive_motor[CAN_SPIN_L_MOTOR].angle_set = stretch_moto_start_angle[CAN_SPIN_L_MOTOR] + angle_set * CATCH_STRETCH_MOTOR_TURN;
-            catch_motive_motor[CAN_SPIN_R_MOTOR].angle_set = stretch_moto_start_angle[CAN_SPIN_R_MOTOR] - angle_set * CATCH_STRETCH_MOTOR_TURN;
-            stretch_flag = 1;
+            catch_auto_mode = CATCH_SKY;
         }
-        else if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_STRETCH_STATE) && stretch_flag == 1)
+        else if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_STANDARD_STATE))
         {
-            catch_motive_motor[CAN_SPIN_L_MOTOR].angle_set = stretch_moto_start_angle[CAN_SPIN_L_MOTOR];
-            catch_motive_motor[CAN_SPIN_R_MOTOR].angle_set = stretch_moto_start_angle[CAN_SPIN_R_MOTOR];
-            stretch_flag = 0;
+            catch_auto_mode = CATCH_STANDARD;
+        }
+        else if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_GROUND_STATE))
+        {
+            catch_auto_mode = CATCH_GROUND;
+        }
+        else if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_DELIVERY_STATE))
+        {
+            catch_auto_mode = CATCH_DELIVERY;
+        }
+        else 
+        {
+            catch_auto_mode = CATCH_INIT;
         }
     }
+    auto_set_control();
 
 }
 
+
+
 /**
  * @brief          设置控制量.根据不同底盘控制模式，三个参数会控制不同运动.在这个函数里面，会调用不同的控制函数.
- * @param[out]     vcatch_set, 通常控制纵向移动.
+ * @param[out]     vcatch_set, 通常翻转机构纵向移动.
  * @param[out]     vstretch_set, 通常控制横向移动.
  * @param[out]     angle_set, 通常控制旋转运动.
  * @param[in]      包括底盘所有信息.
  * @retval         none
  */
-void Catch::behaviour_control_set(fp32 *vcatch_set, fp32 *vstretch_set)
+void Catch::behaviour_control_set(fp32 *vcatch_set, fp32 *vyaw_set, fp32 *vsuction_set)
 {
-
-    if (vcatch_set == NULL || vstretch_set == NULL)
+    if (vcatch_set == NULL || vyaw_set == NULL || vsuction_set == NULL)
     {
         return;
     }
@@ -220,11 +234,12 @@ void Catch::behaviour_control_set(fp32 *vcatch_set, fp32 *vstretch_set)
     if (catch_behaviour_mode == CATCH_ZERO_FORCE)
     {
         *vcatch_set = 0.0f;
-        *vstretch_set = 0.0f;
+        *vyaw_set = 0.0f;
+        *vsuction_set = 0.0f;
     }
     else if (catch_behaviour_mode == CATCH_OPEN)
     {
-        catch_open_set_control(vcatch_set, vstretch_set);
+        catch_open_set_control(vcatch_set, vyaw_set, vsuction_set);
     }
 
     last_catch_RC->key.v = catch_RC->key.v;
@@ -232,26 +247,27 @@ void Catch::behaviour_control_set(fp32 *vcatch_set, fp32 *vstretch_set)
 
 /**
  * @brief          底盘开环的行为状态机下，底盘模式是raw原生状态，故而设定值会直接发送到can总线上
- * @param[in]      vx_set前进的速度,正值 前进速度， 负值 后退速度
- * @param[in]      vy_set左右的速度，正值 左移速度， 负值 右移速度
- * @param[in]      wz_set 旋转速度， 正值 逆时针旋转，负值 顺时针旋转
+ * @param[in]      vx_set夹爪翻转的速度
+ * @param[in]      vy_set抓取机构YAW轴的速度
+ * @param[in]      wz_set吸盘旋转速度
  * @param[in]      数据
  * @retval         none
  */
-void Catch::catch_open_set_control(fp32 *vx_set, fp32 *vy_set)
+void Catch::catch_open_set_control(fp32 *vx_set, fp32 *vy_set, fp32 *vz_set)
 {
-    if (vx_set == NULL || vy_set == NULL)
+    if (vx_set == NULL || vy_set == NULL || vz_set == NULL)
     {
         return;
     }
-    static int16_t catch_channel = 0, stretch_channel = 0;
+    static int16_t catch_channel = 0, yaw_channel = 0, suction_channel = 0;
 
     rc_deadband_limit(catch_RC->rc.ch[CATCH_X_CHANNEL], catch_channel, RC_DEADBAND);
-    rc_deadband_limit(catch_RC->rc.ch[CATCH_Y_CHANNEL], stretch_channel, RC_DEADBAND);
+    rc_deadband_limit(catch_RC->rc.ch[CATCH_Y_CHANNEL], yaw_channel, RC_DEADBAND);
+    rc_deadband_limit(catch_RC->rc.ch[CATCH_Z_CHANNEL], suction_channel, RC_DEADBAND);
 
     *vx_set = catch_RC->rc.ch[CATCH_X_CHANNEL] / CATCH_OPEN_RC_SCALE;
     *vy_set = -catch_RC->rc.ch[CATCH_Y_CHANNEL] / CATCH_OPEN_RC_SCALE;
-
+    *vz_set = catch_RC->rc.ch[CATCH_Z_CHANNEL] / CATCH_OPEN_RC_SCALE;
 }
 
 
@@ -265,7 +281,6 @@ void Catch::solve()
 
     if (catch_behaviour_mode == CATCH_OPEN)
     {
-
         for (int i = 0; i < 4; i++)
         {
             if (catch_motive_motor[i].speed_set > catch_motive_motor[i].max_speed)
@@ -301,8 +316,8 @@ void Catch::output()
             catch_motive_motor[i].current_give = 0.0f;
         }
     }
-    can_receive.can_cmd_catch_motive_motor(catch_motive_motor[CATCH_PUSH_LEFT_ID].current_give, catch_motive_motor[CATCH_PUSH_RIGHT_ID].current_give,
-                                          catch_motive_motor[CAN_SPIN_L_MOTOR].current_give, catch_motive_motor[CAN_SPIN_R_MOTOR].current_give);
+    can_receive.can_cmd_catch_motive_motor(catch_motive_motor[CAN_SPIN_L_MOTOR].current_give, catch_motive_motor[CAN_SPIN_R_MOTOR].current_give,
+                                          catch_motive_motor[CAN_CATCH_YAW_MOTOR].current_give, catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].current_give);
 }
 
 /**
@@ -328,21 +343,26 @@ void Catch::motor_set_control(Mine_motor *motor)
 }
 
 /**
- * @brief          控制电机转动角度
+ * @brief          自动模式控制电机转动角度
  * @param[out]     add: 角度增加量
  * @retval         none
  */
-void Catch::catch_angle_control(fp32 *add)
+void Catch::auto_set_control()
 {
-    add = 0;
-    if (add == NULL)
+    switch(catch_auto_mode)
     {
-        return;
+        case CATCH_INIT:
+        case CATCH_SKY:
+        case CATCH_STANDARD:
+        case CATCH_GROUND:
+        case CATCH_DELIVERY:
+        {
+            static int AUTO_MODE;
+            AUTO_MODE = catch_auto_mode - CATCH_INIT;
+            catch_motive_motor[CAN_SPIN_L_MOTOR].angle_set = moto_start_angle[CAN_SPIN_L_MOTOR] + ROTATE_ANGLE[AUTO_MODE][SPIN_MOTOR];
+            catch_motive_motor[CAN_SPIN_R_MOTOR].angle_set = moto_start_angle[CAN_SPIN_R_MOTOR] - ROTATE_ANGLE[AUTO_MODE][SPIN_MOTOR];
+            catch_motive_motor[CAN_CATCH_YAW_MOTOR].angle_set = moto_start_angle[CAN_CATCH_YAW_MOTOR] + ROTATE_ANGLE[AUTO_MODE][YAW_MOTOR];
+            catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].angle_set = moto_start_angle[CAN_CATCH_SUCTION_MOTOR] + ROTATE_ANGLE[AUTO_MODE][SUCTION_MOTOR];
+        }
     }
-
-    if (switch_is_up(catch_RC->rc.s[CATCH_MODE_CHANNEL])) //伸出模式
-    {
-        *add = STRETCH_LEN;
-    }
-
 }

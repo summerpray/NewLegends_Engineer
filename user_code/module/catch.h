@@ -19,9 +19,11 @@
 #define CATCH_CONTROL_TIME_MS 2
 
 //前后的遥控器通道号码
-#define CATCH_X_CHANNEL 3
+#define CATCH_X_CHANNEL 1
 //左右的遥控器通道号码
-#define CATCH_Y_CHANNEL 2
+#define CATCH_Y_CHANNEL 0
+//
+#define CATCH_Z_CHANNEL 4
 
 #define CATCH_OPEN_RC_SCALE 100 // 遥控器乘以该比例发送到can上
 
@@ -29,6 +31,27 @@
 #define CATCH_MODE_CHANNEL 1
 //选择取矿机构状态 开关通道号
 #define STRETCH_MODE_CHANNEL 0
+// 自动模式下各抓取机构的相对角度
+
+#define CATCH_INIT_SPIN_ANGLE 0.0f
+#define CATCH_INIT_YAW_ANGLE 0.0f
+#define CATCH_INIT_SUCTION_ANGLE 0.0f
+
+#define CATCH_SKY_SPIN_ANGLE 0.0f
+#define CATCH_SKY_YAW_ANGLE 0.0f
+#define CATCH_SKY_SUCTION_ANGLE 0.0f
+
+#define CATCH_STANDARD_SPIN_ANGLE 0.0f
+#define CATCH_STANDARD_YAW_ANGLE 0.0f
+#define CATCH_STANDARD_SUCTION_ANGLE 0.0f
+
+#define CATCH_GROUND_SPIN_ANGLE 0.0f
+#define CATCH_GROUND_YAW_ANGLE 0.0f
+#define CATCH_GROUND_SUCTION_ANGLE 0.0f
+
+#define CATCH_DELIVERY_SPIN_ANGLE 0.0f
+#define CATCH_DELIVERY_YAW_ANGLE 0.0f
+#define CATCH_DELIVERY_SUCTION_ANGLE 0.0f
 
 //拨矿电机速度环PID
 #define MOTIVE_MOTOR_SPEED_PID_KP 1000.0f
@@ -80,7 +103,7 @@ struct speed_t
     fp32 max_speed;
     fp32 min_speed;
 };
-
+// 用于电机ID
 typedef enum
 {
     CAN_SPIN_L_MOTOR = 0,
@@ -88,6 +111,15 @@ typedef enum
     CAN_CATCH_YAW_MOTOR,
     CAN_CATCH_SUCTION_MOTOR,
 };                    
+
+// 用于自动模式下的电机控制
+typedef enum
+{
+    SPIN_MOTOR = 0,
+    YAW_MOTOR,
+    SUCTION_MOTOR,
+    MOTOR_NUM,
+};  
 
 typedef enum
 {
@@ -101,11 +133,28 @@ typedef enum
 
 typedef enum
 {
-    CATCH_AUTO,      //无敌的自动模式
+    CATCH_AUTO,
 
     CATCH_HAND,      //用了自动模式的都说好
 
 } catch_mode_e;      //控制模式
+
+typedef enum
+{
+    CATCH_INIT,      //复位
+
+    CATCH_SKY,       //空接
+
+    CATCH_STANDARD,  //资源岛
+
+    CATCH_GROUND,    //地矿
+
+    CATCH_DELIVERY,  //兑矿
+
+    AUTO_MODE_NUM,
+
+} catch_auto_mode_e;      //自动控制模式
+
 
 
 class Catch {
@@ -121,10 +170,16 @@ public:
     catch_mode_e catch_mode; //抓取机构控制状态机
     catch_mode_e last_catch_mode; //抓取机构上次控制状态机
 
+    catch_auto_mode_e catch_auto_mode; //应该知道这是干嘛的吧
+    catch_auto_mode_e last_catch_auto_mode; //应该知道这是干嘛的吧
+
     Mine_motor catch_motive_motor[4];
-    int32_t stretch_moto_start_angle[2];
+    int32_t moto_start_angle[4];
 
     uint8_t catch_flag;
+    uint8_t sky_flag;
+
+    int32_t ROTATE_ANGLE[AUTO_MODE_NUM][MOTOR_NUM];
 
     void init();
 
@@ -136,14 +191,13 @@ public:
 
     void set_control();
 
+    void auto_set_control();
     //行为模式
-    void behaviour_control_set(fp32 *vx_set, fp32 *vy_set);
+    void behaviour_control_set(fp32 *vcatch_set, fp32 *vyaw_set, fp32 *vsuction_set);
 
-    void catch_open_set_control(fp32 *vx_set, fp32 *vy_set);
+    void catch_open_set_control(fp32 *vx_set, fp32 *vy_set, fp32 *vz_set);
 
     void motor_set_control(Mine_motor *motor);
-
-    void catch_angle_control(fp32 *add);
 
     void solve();
 
