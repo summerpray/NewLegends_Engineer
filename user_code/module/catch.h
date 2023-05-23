@@ -9,6 +9,7 @@
 #include "Motor.h"
 #include "Pid.h"
 #include "Config.h"
+#include "auto.h"
 
 //拨矿电机方向
 #define CATCH_UPLOAD_MOTOR_TURN 1
@@ -31,27 +32,7 @@
 #define CATCH_MODE_CHANNEL 1
 //选择取矿机构状态 开关通道号
 #define STRETCH_MODE_CHANNEL 0
-// 自动模式下各抓取机构的相对角度
 
-#define CATCH_INIT_SPIN_ANGLE 0.0f
-#define CATCH_INIT_YAW_ANGLE 0.0f
-#define CATCH_INIT_SUCTION_ANGLE 0.0f
-
-#define CATCH_SKY_SPIN_ANGLE 0.0f
-#define CATCH_SKY_YAW_ANGLE 0.0f
-#define CATCH_SKY_SUCTION_ANGLE 0.0f
-
-#define CATCH_STANDARD_SPIN_ANGLE 0.0f
-#define CATCH_STANDARD_YAW_ANGLE 0.0f
-#define CATCH_STANDARD_SUCTION_ANGLE 0.0f
-
-#define CATCH_GROUND_SPIN_ANGLE 0.0f
-#define CATCH_GROUND_YAW_ANGLE 0.0f
-#define CATCH_GROUND_SUCTION_ANGLE 0.0f
-
-#define CATCH_DELIVERY_SPIN_ANGLE 0.0f
-#define CATCH_DELIVERY_YAW_ANGLE 0.0f
-#define CATCH_DELIVERY_SUCTION_ANGLE 0.0f
 
 //拨矿电机速度环PID
 #define MOTIVE_MOTOR_SPEED_PID_KP 1000.0f
@@ -72,14 +53,18 @@
 #define CATCH_MOTOR_RPM_TO_VECTOR_SEN M3508_MOTOR_RPM_TO_VECTOR
 #define CATCH_MOTOR_RPM_TO_VECTOR_SEN M3508_MOTOR_RPM_TO_VECTOR
 
+// 各电机角度限幅
+#define SPIN_LIMIT_ANGLE 0.0f
+#define YAW_LIMIT_ANGLE 0.0f
+#define SUCTION_LIMIT_ANGLE 0.0f
+
 #define MOTOR_SPEED_TO_CATCH_SPEED 0.25f
 
 //拨矿过程最大速度
 #define NORMAL_MAX_CATCH_SPEED 4.0f //2.0
 //伸爪最大速度
 #define NORMAL_MAX_STRETCH_SPEED 4.0f //2.0
-//伸爪长度
-#define STRETCH_LEN 100000.0f
+
 //遥控器输入死区，因为遥控器存在差异，摇杆在中间，其值不一定为零
 #define RC_DEADBAND 0
 
@@ -95,14 +80,6 @@
         }                                                \
     }
 
-struct speed_t
-{
-    fp32 speed;
-    fp32 speed_set;
-
-    fp32 max_speed;
-    fp32 min_speed;
-};
 // 用于电机ID
 typedef enum
 {
@@ -139,25 +116,10 @@ typedef enum
 
 } catch_mode_e;      //控制模式
 
-typedef enum
+
+
+class Catch 
 {
-    CATCH_INIT,      //复位
-
-    CATCH_SKY,       //空接
-
-    CATCH_STANDARD,  //资源岛
-
-    CATCH_GROUND,    //地矿
-
-    CATCH_DELIVERY,  //兑矿
-
-    AUTO_MODE_NUM,
-
-} catch_auto_mode_e;      //自动控制模式
-
-
-
-class Catch {
 public:
     const RC_ctrl_t *catch_RC; //抓取机构使用的遥控器指针
     RC_ctrl_t *last_catch_RC; //抓取机构使用的遥控器指针
@@ -170,17 +132,11 @@ public:
     catch_mode_e catch_mode; //抓取机构控制状态机
     catch_mode_e last_catch_mode; //抓取机构上次控制状态机
 
-    catch_auto_mode_e catch_auto_mode; //应该知道这是干嘛的吧
-    catch_auto_mode_e last_catch_auto_mode; //应该知道这是干嘛的吧
-
     Mine_motor catch_motive_motor[4];
     int32_t moto_start_angle[4];
 
-    uint8_t catch_flag;
-    uint8_t sky_flag;
-
-    int32_t ROTATE_ANGLE[AUTO_MODE_NUM][MOTOR_NUM];
-
+    uint8_t motor_status[MOTOR_NUM];
+    
     void init();
 
     void set_mode();
@@ -191,7 +147,7 @@ public:
 
     void set_control();
 
-    void auto_set_control();
+    void auto_control(auto_mode_e *auto_mode);
     //行为模式
     void behaviour_control_set(fp32 *vcatch_set, fp32 *vyaw_set, fp32 *vsuction_set);
 
@@ -206,7 +162,7 @@ public:
 };
 
 
-extern Catch catch;
+extern Catch minecatch;
 
 
 #endif

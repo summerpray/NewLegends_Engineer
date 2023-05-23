@@ -35,7 +35,15 @@ extern "C"
 }
 #endif
 
-Catch catch;
+int32_t ROTATE_ANGLE[AUTO_MODE_NUM][CAN_CATCH_SUCTION_MOTOR] = {
+        {CATCH_INIT_SPIN_ANGLE, CATCH_INIT_YAW_ANGLE, CATCH_INIT_SUCTION_ANGLE},
+        {CATCH_SKY_SPIN_ANGLE, CATCH_SKY_YAW_ANGLE, CATCH_SKY_SUCTION_ANGLE},
+        {CATCH_STANDARD_SPIN_ANGLE, CATCH_STANDARD_YAW_ANGLE, CATCH_STANDARD_SUCTION_ANGLE},
+        {CATCH_GROUND_SPIN_ANGLE, CATCH_GROUND_YAW_ANGLE, CATCH_GROUND_SUCTION_ANGLE},
+        {CATCH_DELIVERY_SPIN_ANGLE, CATCH_DELIVERY_YAW_ANGLE, CATCH_DELIVERY_SUCTION_ANGLE}
+    };
+
+Catch minecatch;
 
 /**
  * @brief          遥控器的死区判断，因为遥控器的拨杆在中位的时候，不一定为0，
@@ -79,19 +87,21 @@ void Catch::init()
         moto_start_angle[i] = catch_motive_motor[i].total_angle;
         catch_motive_motor[i].max_speed = NORMAL_MAX_STRETCH_SPEED;
         catch_motive_motor[i].min_speed = -NORMAL_MAX_STRETCH_SPEED;
+
+        motor_status[i] = WAIT;
     }
-    catch_auto_mode = CATCH_INIT;
-    last_catch_auto_mode = catch_auto_mode;
+    // 电机软件限位，需要测试后开启
+    // catch_motive_motor[CAN_SPIN_L_MOTOR].max_angle = moto_start_angle[CAN_SPIN_L_MOTOR] + SPIN_LIMIT_ANGLE;
+    // catch_motive_motor[CAN_SPIN_L_MOTOR].min_angle = moto_start_angle[CAN_SPIN_L_MOTOR] - SPIN_LIMIT_ANGLE;
 
-    catch_flag = 0;
+    // catch_motive_motor[CAN_SPIN_R_MOTOR].max_angle = moto_start_angle[CAN_SPIN_R_MOTOR] + SPIN_LIMIT_ANGLE;
+    // catch_motive_motor[CAN_SPIN_R_MOTOR].min_angle = moto_start_angle[CAN_SPIN_R_MOTOR] - SPIN_LIMIT_ANGLE;
 
-    int32_t ROTATE_ANGLE[AUTO_MODE_NUM][CAN_CATCH_SUCTION_MOTOR] = {
-        {CATCH_INIT_SPIN_ANGLE, CATCH_INIT_YAW_ANGLE, CATCH_INIT_SUCTION_ANGLE},
-        {CATCH_SKY_SPIN_ANGLE, CATCH_SKY_YAW_ANGLE, CATCH_SKY_SUCTION_ANGLE},
-        {CATCH_STANDARD_SPIN_ANGLE, CATCH_STANDARD_YAW_ANGLE, CATCH_STANDARD_SUCTION_ANGLE},
-        {CATCH_GROUND_SPIN_ANGLE, CATCH_GROUND_YAW_ANGLE, CATCH_GROUND_SUCTION_ANGLE},
-        {CATCH_DELIVERY_SPIN_ANGLE, CATCH_DELIVERY_YAW_ANGLE, CATCH_DELIVERY_SUCTION_ANGLE},
-    };
+    // catch_motive_motor[CAN_CATCH_YAW_MOTOR].max_angle = moto_start_angle[CAN_CATCH_YAW_MOTOR] + YAW_LIMIT_ANGLE;
+    // catch_motive_motor[CAN_CATCH_YAW_MOTOR].min_angle = moto_start_angle[CAN_CATCH_YAW_MOTOR] - YAW_LIMIT_ANGLE;
+
+    // catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].max_angle = moto_start_angle[CAN_CATCH_SUCTION_MOTOR] + SUCTION_LIMIT_ANGLE;
+    // catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].min_angle = moto_start_angle[CAN_CATCH_SUCTION_MOTOR] - SUCTION_LIMIT_ANGLE;
     //更新一下数据
     feedback_update();
 }
@@ -111,7 +121,13 @@ void Catch::feedback_update(){
         //更新动力电机速度
         catch_motive_motor[i].speed = CATCH_MOTOR_RPM_TO_VECTOR_SEN * catch_motive_motor[i].motor_measure->speed_rpm;
         catch_motive_motor[i].total_angle = catch_motive_motor[i].motor_measure->total_angle;
+        catch_motive_motor[i].angle_error = catch_motive_motor[i].total_angle - catch_motive_motor[i].angle_set;
+        if (catch_motive_motor[i].angle_error < ANGLE_ERR_TOLERANT &&  catch_motive_motor[i].angle_error > -ANGLE_ERR_TOLERANT)
+            motor_status[i] = READY;
+        else
+            motor_status[i] = WAIT;
     }
+
     // 这两个变量暂时没有用到，目的是为了伸出一半还能收回
     // catch_motive_motor[CAN_SPIN_L_MOTOR].angle_error = catch_motive_motor[CAN_SPIN_L_MOTOR].total_angle - stretch_moto_start_angle[CAN_SPIN_L_MOTOR];
     // catch_motive_motor[CAN_SPIN_R_MOTOR].angle_error = catch_motive_motor[CAN_SPIN_R_MOTOR].total_angle - stretch_moto_start_angle[CAN_SPIN_R_MOTOR];
@@ -186,31 +202,7 @@ void Catch::set_control()
         catch_motive_motor[CAN_CATCH_YAW_MOTOR].speed_set = vyaw_set;
         catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].speed_set = vsuction_set;
     }
-    //TODO:手动写完就写个自动
-    else if (catch_mode == CATCH_AUTO)
-    {
-        if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_SKY_STATE))
-        {
-            catch_auto_mode = CATCH_SKY;
-        }
-        else if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_STANDARD_STATE))
-        {
-            catch_auto_mode = CATCH_STANDARD;
-        }
-        else if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_GROUND_STATE))
-        {
-            catch_auto_mode = CATCH_GROUND;
-        }
-        else if (if_key_singal_pessed(catch_RC, last_catch_RC, KEY_PRESSED_DELIVERY_STATE))
-        {
-            catch_auto_mode = CATCH_DELIVERY;
-        }
-        else 
-        {
-            catch_auto_mode = CATCH_INIT;
-        }
-    }
-    auto_set_control();
+
 
 }
 
@@ -347,9 +339,9 @@ void Catch::motor_set_control(Mine_motor *motor)
  * @param[out]     add: 角度增加量
  * @retval         none
  */
-void Catch::auto_set_control()
+void Catch::auto_control(auto_mode_e *auto_mode)
 {
-    switch(catch_auto_mode)
+    switch(*auto_mode)
     {
         case CATCH_INIT:
         case CATCH_SKY:
@@ -358,7 +350,7 @@ void Catch::auto_set_control()
         case CATCH_DELIVERY:
         {
             static int AUTO_MODE;
-            AUTO_MODE = catch_auto_mode - CATCH_INIT;
+            AUTO_MODE = *auto_mode - CATCH_INIT;
             catch_motive_motor[CAN_SPIN_L_MOTOR].angle_set = moto_start_angle[CAN_SPIN_L_MOTOR] + ROTATE_ANGLE[AUTO_MODE][SPIN_MOTOR];
             catch_motive_motor[CAN_SPIN_R_MOTOR].angle_set = moto_start_angle[CAN_SPIN_R_MOTOR] - ROTATE_ANGLE[AUTO_MODE][SPIN_MOTOR];
             catch_motive_motor[CAN_CATCH_YAW_MOTOR].angle_set = moto_start_angle[CAN_CATCH_YAW_MOTOR] + ROTATE_ANGLE[AUTO_MODE][YAW_MOTOR];

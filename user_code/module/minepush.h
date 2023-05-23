@@ -9,6 +9,7 @@
 #include "Motor.h"
 #include "Pid.h"
 #include "Config.h"
+#include "auto.h"
 
 //拨矿电机方向
 #define MINE_UPLOAD_MOTOR_TURN 1
@@ -44,6 +45,7 @@
 #define MOTIVE_MOTOR_ANGLE_PID_MAX_IOUT 1.0f
 #define MOTIVE_MOTOR_ANGLE_PID_MAX_OUT 6000.0f
 
+
 //m3508转化成底盘速度(m/s)的比例，
 #define M3508_MOTOR_RPM_TO_VECTOR 0.000415809748903494517209f
 #define MINE_MOTOR_RPM_TO_VECTOR_SEN M3508_MOTOR_RPM_TO_VECTOR
@@ -51,12 +53,13 @@
 
 #define MOTOR_SPEED_TO_MINE_SPEED 0.25f
 
+// 伸爪电机角度限幅
+#define STRENTCH_LIMIT_ANGLE 0.0f
+
 //拨矿过程最大速度
 #define NORMAL_MAX_MINE_SPEED 4.0f //2.0
 //伸爪最大速度
 #define NORMAL_MAX_STRETCH_SPEED 4.0f //2.0
-//伸爪长度
-#define STRETCH_LEN 100000.0f
 //遥控器输入死区，因为遥控器存在差异，摇杆在中间，其值不一定为零
 #define RC_DEADBAND 0
 
@@ -72,21 +75,12 @@
         }                                                \
     }
 
-struct speed_t
-{
-    fp32 speed;
-    fp32 speed_set;
-
-    fp32 max_speed;
-    fp32 min_speed;
-};
-
 typedef enum
 {
-    MINE_PUSH_LEFT_ID = 0,
+    MINE_STRETCH_L_ID = 0,
+    MINE_STRETCH_R_ID,
+    MINE_PUSH_LEFT_ID,
     MINE_PUSH_RIGHT_ID,
-    MINE_STRETCH_LEFT_ID,
-    MINE_STRETCH_RIGHT_ID,
 };                    
 
 typedef enum
@@ -124,7 +118,9 @@ public:
     Mine_motor mine_motive_motor[4];
     int32_t stretch_moto_start_angle[2];
 
-    uint8_t stretch_flag;
+    int8_t motor_status[2];
+    
+    
 
     void init();
 
@@ -143,11 +139,11 @@ public:
 
     void motor_set_control(Mine_motor *motor);
 
-    void mine_angle_control(fp32 *add);
-
     void solve();
 
     void output();
+
+    void auto_control(auto_mode_e *auto_mode);
 
 };
 

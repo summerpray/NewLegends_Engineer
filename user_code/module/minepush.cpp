@@ -37,6 +37,14 @@ extern "C"
 }
 #endif
 
+int32_t STRETCH_LEN[AUTO_MODE_NUM] = {
+        STRETCH_INIT_LEN,
+        STRETCH_SKY_LEN,
+        STRETCH_STANDARD_LEN,
+        STRETCH_GROUND_LEN,
+        STRETCH_DELIVERY_LEN,
+    };
+
 MinePush minepush;
 
 /**
@@ -77,17 +85,23 @@ void MinePush::init()
         mine_motive_motor[i].angle_pid.pid_clear();
     }
 
-    //设置初始值
-    stretch_moto_start_angle[MINE_STRETCH_LEFT_ID] = mine_motive_motor[MINE_STRETCH_LEFT_ID].total_angle;
-    stretch_moto_start_angle[MINE_STRETCH_RIGHT_ID] = mine_motive_motor[MINE_STRETCH_RIGHT_ID].total_angle;
+    for (uint8_t i = MINE_STRETCH_L_ID; i < MINE_STRETCH_R_ID + 1; ++i)
+    {
+        //设置初始值
+        stretch_moto_start_angle[i] = mine_motive_motor[i].total_angle;
+        mine_motive_motor[i].max_speed = NORMAL_MAX_STRETCH_SPEED;
+        mine_motive_motor[i].min_speed = -NORMAL_MAX_STRETCH_SPEED;
+        mine_motive_motor[i].angle_error = mine_motive_motor[i].total_angle - mine_motive_motor[i].angle_set;
+        motor_status[i] = WAIT;
+    }
 
-    mine_motive_motor[MINE_STRETCH_LEFT_ID].max_speed = NORMAL_MAX_STRETCH_SPEED;
-    mine_motive_motor[MINE_STRETCH_LEFT_ID].min_speed = -NORMAL_MAX_STRETCH_SPEED;
-    mine_motive_motor[MINE_STRETCH_RIGHT_ID].max_speed = NORMAL_MAX_STRETCH_SPEED;
-    mine_motive_motor[MINE_STRETCH_RIGHT_ID].min_speed = -NORMAL_MAX_STRETCH_SPEED;
+    // 电机软件限位，需要测试后开启
+    // mine_motive_motor[MINE_STRETCH_L_ID].max_angle = stretch_moto_start_angle[MINE_STRETCH_L_ID] + STRENTCH_LIMIT_ANGLE;
+    // mine_motive_motor[MINE_STRETCH_L_ID].min_angle = stretch_moto_start_angle[MINE_STRETCH_L_ID];
+
+    // mine_motive_motor[MINE_STRETCH_R_ID].max_angle = stretch_moto_start_angle[MINE_STRETCH_R_ID];
+    // mine_motive_motor[MINE_STRETCH_R_ID].min_angle = stretch_moto_start_angle[MINE_STRETCH_R_ID] - STRENTCH_LIMIT_ANGLE;
     
-    stretch_flag = 0;
-
     //更新一下数据
     feedback_update();
 }
@@ -108,9 +122,15 @@ void MinePush::feedback_update(){
         mine_motive_motor[i].speed = MINE_MOTOR_RPM_TO_VECTOR_SEN * mine_motive_motor[i].motor_measure->speed_rpm;
         mine_motive_motor[i].total_angle = mine_motive_motor[i].motor_measure->total_angle;
     }
+    for (uint8_t i = MINE_STRETCH_L_ID; i < MINE_STRETCH_R_ID + 1; ++i)
+    {
+        if (mine_motive_motor[i].angle_error < ANGLE_ERR_TOLERANT && mine_motive_motor[i].angle_error > -ANGLE_ERR_TOLERANT)
+            motor_status[i] = READY;
+        else
+            motor_status[i] = WAIT;
+    }
     // 这两个变量暂时没有用到，目的是为了伸出一半还能收回
-    mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_error = mine_motive_motor[MINE_STRETCH_LEFT_ID].total_angle - stretch_moto_start_angle[MINE_STRETCH_LEFT_ID];
-    mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_error = mine_motive_motor[MINE_STRETCH_RIGHT_ID].total_angle - stretch_moto_start_angle[MINE_STRETCH_RIGHT_ID];
+    
 }
 
 /**
@@ -146,7 +166,6 @@ void MinePush::behaviour_mode_set()
         mine_behaviour_mode = MINE_CLOSE;
     }
 
-
     //根据行为模式选择一个控制模式
     if (mine_behaviour_mode == MINE_ZERO_FORCE || mine_behaviour_mode == MINE_OPEN)
     {
@@ -179,26 +198,10 @@ void MinePush::set_control()
     {
         mine_motive_motor[MINE_PUSH_LEFT_ID].speed_set = vmine_set;
         mine_motive_motor[MINE_PUSH_RIGHT_ID].speed_set = -vmine_set;
-        mine_motive_motor[MINE_STRETCH_LEFT_ID].speed_set = vstretch_set;
-        mine_motive_motor[MINE_STRETCH_RIGHT_ID].speed_set = vstretch_set;
+        mine_motive_motor[MINE_STRETCH_L_ID].speed_set = vstretch_set;
+        mine_motive_motor[MINE_STRETCH_R_ID].speed_set = vstretch_set;
     }
-    //TODO:手动写完就写个自动
-    else if (mine_mode == MINE_AUTO)
-    {
-        if (if_key_singal_pessed(mine_RC, last_mine_RC, KEY_PRESSED_STRETCH_STATE) && stretch_flag == 0)
-        {
-            mine_angle_control(&angle_set);
-            mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set = stretch_moto_start_angle[MINE_STRETCH_LEFT_ID] + angle_set * MINE_STRETCH_MOTOR_TURN;
-            mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set = stretch_moto_start_angle[MINE_STRETCH_RIGHT_ID] - angle_set * MINE_STRETCH_MOTOR_TURN;
-            stretch_flag = 1;
-        }
-        else if (if_key_singal_pessed(mine_RC, last_mine_RC, KEY_PRESSED_STRETCH_STATE) && stretch_flag == 1)
-        {
-            mine_motive_motor[MINE_STRETCH_LEFT_ID].angle_set = stretch_moto_start_angle[MINE_STRETCH_LEFT_ID];
-            mine_motive_motor[MINE_STRETCH_RIGHT_ID].angle_set = stretch_moto_start_angle[MINE_STRETCH_RIGHT_ID];
-            stretch_flag = 0;
-        }
-    }
+    
 }
 
 /**
@@ -302,7 +305,7 @@ void MinePush::output()
         }
     }
     can_receive.can_cmd_mine_motive_motor(mine_motive_motor[MINE_PUSH_LEFT_ID].current_give, mine_motive_motor[MINE_PUSH_RIGHT_ID].current_give,
-                                          mine_motive_motor[MINE_STRETCH_LEFT_ID].current_give, mine_motive_motor[MINE_STRETCH_RIGHT_ID].current_give);
+                                          mine_motive_motor[MINE_STRETCH_L_ID].current_give, mine_motive_motor[MINE_STRETCH_R_ID].current_give);
 }
 
 /**
@@ -328,21 +331,24 @@ void MinePush::motor_set_control(Mine_motor *motor)
 }
 
 /**
- * @brief          控制电机转动角度
- * @param[out]     add: 角度增加量
+ * @brief          伸爪结构自动控制
+ * @param[out]     
  * @retval         none
  */
-void MinePush::mine_angle_control(fp32 *add)
+void MinePush::auto_control(auto_mode_e *auto_mode)
 {
-    add = 0;
-    if (add == NULL)
+    switch(*auto_mode)
     {
-        return;
+        case CATCH_INIT:
+        case CATCH_SKY:
+        case CATCH_STANDARD:
+        case CATCH_GROUND:
+        case CATCH_DELIVERY:
+        {
+            static int AUTO_MODE;
+            AUTO_MODE = *auto_mode - CATCH_INIT;
+            mine_motive_motor[MINE_PUSH_LEFT_ID].angle_set = stretch_moto_start_angle[MINE_PUSH_LEFT_ID] + STRETCH_LEN[AUTO_MODE];
+            mine_motive_motor[MINE_PUSH_RIGHT_ID].angle_set = stretch_moto_start_angle[MINE_PUSH_RIGHT_ID] - STRETCH_LEN[AUTO_MODE];
+        }
     }
-
-    if (switch_is_up(mine_RC->rc.s[MINE_MODE_CHANNEL])) //伸出模式
-    {
-        *add = STRETCH_LEN;
-    }
-
 }

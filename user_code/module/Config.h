@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define ANGLE_ERR_TOLERANT 5000
+
 /*----------------------底盘---------------------------*/
 //底盘动力电机无电流输出
 #define CHASSIS_MOTIVE_MOTOR_NO_CURRENT 0
@@ -11,7 +13,9 @@
 #define CHASSIS_REMOTE_OPEN 0
 
 /*---------------------按键---------------------------*/
-//空接模式
+
+#define KEY_PRESSED_STRETCH_STATE  'E'
+//一键空接模式
 #define KEY_PRESSED_SKY_STATE      'Q'
 
 //初始模式 单击G
@@ -28,5 +32,9 @@
 
 //初始化UI界面
 #define KEY_PRESSED_UI_UPDATE      'B'
+
+
+
+
 
 #endif
