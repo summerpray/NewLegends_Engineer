@@ -84,26 +84,32 @@ void Catch::init()
         catch_motive_motor[i].angle_pid.pid_clear();
         
         //设置初始值
-        moto_start_angle[i] = catch_motive_motor[i].total_angle;
-        catch_motive_motor[i].max_speed = NORMAL_MAX_STRETCH_SPEED;
-        catch_motive_motor[i].min_speed = -NORMAL_MAX_STRETCH_SPEED;
+        
+        catch_motive_motor[i].max_speed = NORMAL_MAX_CATCH_SPEED;
+        catch_motive_motor[i].min_speed = -NORMAL_MAX_CATCH_SPEED;
 
         motor_status[i] = WAIT;
     }
     // 电机软件限位，需要测试后开启
-    // catch_motive_motor[CAN_SPIN_L_MOTOR].max_angle = moto_start_angle[CAN_SPIN_L_MOTOR] + SPIN_LIMIT_ANGLE;
-    // catch_motive_motor[CAN_SPIN_L_MOTOR].min_angle = moto_start_angle[CAN_SPIN_L_MOTOR] - SPIN_LIMIT_ANGLE;
-
-    // catch_motive_motor[CAN_SPIN_R_MOTOR].max_angle = moto_start_angle[CAN_SPIN_R_MOTOR] + SPIN_LIMIT_ANGLE;
-    // catch_motive_motor[CAN_SPIN_R_MOTOR].min_angle = moto_start_angle[CAN_SPIN_R_MOTOR] - SPIN_LIMIT_ANGLE;
-
-    // catch_motive_motor[CAN_CATCH_YAW_MOTOR].max_angle = moto_start_angle[CAN_CATCH_YAW_MOTOR] + YAW_LIMIT_ANGLE;
-    // catch_motive_motor[CAN_CATCH_YAW_MOTOR].min_angle = moto_start_angle[CAN_CATCH_YAW_MOTOR] - YAW_LIMIT_ANGLE;
-
-    // catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].max_angle = moto_start_angle[CAN_CATCH_SUCTION_MOTOR] + SUCTION_LIMIT_ANGLE;
-    // catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].min_angle = moto_start_angle[CAN_CATCH_SUCTION_MOTOR] - SUCTION_LIMIT_ANGLE;
+    
+    
     //更新一下数据
     feedback_update();
+    moto_start_angle[CAN_CATCH_YAW_MOTOR] = catch_motive_motor[CAN_CATCH_YAW_MOTOR].total_angle;
+    catch_motive_motor[CAN_CATCH_YAW_MOTOR].max_angle = moto_start_angle[CAN_CATCH_YAW_MOTOR] + YAW_LIMIT_ANGLE;
+    catch_motive_motor[CAN_CATCH_YAW_MOTOR].min_angle = moto_start_angle[CAN_CATCH_YAW_MOTOR] - YAW_LIMIT_ANGLE;
+    
+    moto_start_angle[CAN_CATCH_SUCTION_MOTOR] = catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].total_angle;
+    catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].max_angle = moto_start_angle[CAN_CATCH_SUCTION_MOTOR] + SUCTION_LIMIT_ANGLE;
+    catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].min_angle = moto_start_angle[CAN_CATCH_SUCTION_MOTOR] - SUCTION_LIMIT_ANGLE;
+
+    moto_start_angle[CAN_SPIN_L_MOTOR] = catch_motive_motor[CAN_SPIN_L_MOTOR].total_angle;
+    catch_motive_motor[CAN_SPIN_L_MOTOR].max_angle = moto_start_angle[CAN_SPIN_L_MOTOR] + SPIN_LIMIT_ANGLE;
+    catch_motive_motor[CAN_SPIN_L_MOTOR].min_angle = moto_start_angle[CAN_SPIN_L_MOTOR] - SPIN_LIMIT_ANGLE;
+
+    moto_start_angle[CAN_SPIN_R_MOTOR] = catch_motive_motor[CAN_SPIN_R_MOTOR].total_angle;
+    catch_motive_motor[CAN_SPIN_R_MOTOR].max_angle = moto_start_angle[CAN_SPIN_R_MOTOR] + SPIN_LIMIT_ANGLE;
+    catch_motive_motor[CAN_SPIN_R_MOTOR].min_angle = moto_start_angle[CAN_SPIN_R_MOTOR] - SPIN_LIMIT_ANGLE;
 }
 
 /**
@@ -128,9 +134,6 @@ void Catch::feedback_update(){
             motor_status[i] = WAIT;
     }
 
-    // 这两个变量暂时没有用到，目的是为了伸出一半还能收回
-    // catch_motive_motor[CAN_SPIN_L_MOTOR].angle_error = catch_motive_motor[CAN_SPIN_L_MOTOR].total_angle - stretch_moto_start_angle[CAN_SPIN_L_MOTOR];
-    // catch_motive_motor[CAN_SPIN_R_MOTOR].angle_error = catch_motive_motor[CAN_SPIN_R_MOTOR].total_angle - stretch_moto_start_angle[CAN_SPIN_R_MOTOR];
 }
 
 /**
@@ -197,10 +200,15 @@ void Catch::set_control()
     if (catch_mode == CATCH_HAND)
     {
         //同轴有一个是相反的
-        catch_motive_motor[CAN_SPIN_L_MOTOR].speed_set = vspin_set;
-        catch_motive_motor[CAN_SPIN_R_MOTOR].speed_set = -vspin_set;
-        catch_motive_motor[CAN_CATCH_YAW_MOTOR].speed_set = vyaw_set;
-        catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].speed_set = vsuction_set;
+        catch_motive_motor[CAN_SPIN_L_MOTOR].angle_set += vspin_set;
+        catch_motive_motor[CAN_SPIN_R_MOTOR].angle_set += -vspin_set;
+        catch_motive_motor[CAN_CATCH_YAW_MOTOR].angle_set += vyaw_set;
+        catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].angle_set += vsuction_set;
+    }
+    // 做角度限幅
+    for (int i = 0;i < 4;i++)
+    {
+        motor_angle_limit(&catch_motive_motor[i]);
     }
 
 
@@ -232,6 +240,7 @@ void Catch::behaviour_control_set(fp32 *vcatch_set, fp32 *vyaw_set, fp32 *vsucti
     else if (catch_behaviour_mode == CATCH_OPEN)
     {
         catch_open_set_control(vcatch_set, vyaw_set, vsuction_set);
+
     }
 
     last_catch_RC->key.v = catch_RC->key.v;
@@ -271,27 +280,28 @@ void Catch::catch_open_set_control(fp32 *vx_set, fp32 *vy_set, fp32 *vz_set)
 void Catch::solve()
 {
 
-    if (catch_behaviour_mode == CATCH_OPEN)
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            if (catch_motive_motor[i].speed_set > catch_motive_motor[i].max_speed)
-                catch_motive_motor[i].speed_set = catch_motive_motor[i].max_speed;
-            if (catch_motive_motor[i].speed_set < catch_motive_motor[i].min_speed)
-                catch_motive_motor[i].speed_set = catch_motive_motor[i].min_speed;
-            catch_motive_motor[i].current_give = catch_motive_motor[i].speed_pid.pid_calc();
-        }
-        // raw控制直接返回
-        return;
-    }
-    else if (catch_behaviour_mode == CATCH_CLOSE)
-    {
+    // if (catch_behaviour_mode == CATCH_OPEN)
+    // {
+    //     for (int i = 0; i < 4; i++)
+    //     {
+    //         catch_motive_motor[i].speed_set = catch_motive_motor[i].angle_pid.pid_calc();
+    //         if (catch_motive_motor[i].speed_set > catch_motive_motor[i].max_speed)
+    //             catch_motive_motor[i].speed_set = catch_motive_motor[i].max_speed;
+    //         if (catch_motive_motor[i].speed_set < catch_motive_motor[i].min_speed)
+    //             catch_motive_motor[i].speed_set = catch_motive_motor[i].min_speed;
+    //         catch_motive_motor[i].current_give = catch_motive_motor[i].speed_pid.pid_calc();
+    //     }
+    //     // raw控制直接返回
+    //     return;
+    // }
+    // else if (catch_behaviour_mode == CATCH_CLOSE)
+    // {
         for (int i = 0; i < 4; i++)
         {
             motor_set_control(&catch_motive_motor[i]);
         }
         //TODO:其实这里需要把两个2006只用速度环，伸出电机继续使用双环
-    }
+    // }
 }
 
 /**
@@ -310,6 +320,7 @@ void Catch::output()
     }
     can_receive.can_cmd_catch_motive_motor(catch_motive_motor[CAN_SPIN_L_MOTOR].current_give, catch_motive_motor[CAN_SPIN_R_MOTOR].current_give,
                                           catch_motive_motor[CAN_CATCH_YAW_MOTOR].current_give, catch_motive_motor[CAN_CATCH_SUCTION_MOTOR].current_give);
+    // can_receive.can_cmd_catch_motive_motor(0,0,0,0);
 }
 
 /**
@@ -333,6 +344,19 @@ void Catch::motor_set_control(Mine_motor *motor)
     motor->current_give = motor->speed_pid.pid_calc();
     
 }
+
+void Catch::motor_angle_limit(Mine_motor *motor)
+{
+    if (motor->total_angle < motor->min_angle)
+    {
+        motor->total_angle = motor->min_angle;
+    }
+    else if (motor->total_angle > motor->max_angle)
+    {
+        motor->total_angle = motor->max_angle;
+    }
+}
+
 
 /**
  * @brief          自动模式控制电机转动角度
