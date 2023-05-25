@@ -6,7 +6,7 @@
 #include "struct_typedef.h"
 
 extern CAN_HandleTypeDef hcan1;
-extern CAN_HandleTypeDef hcan2;
+extern CAN_HandleTypeDef hcan1;
 
 #define MINE_CAN hcan1
 #define CATCH_CAN hcan1

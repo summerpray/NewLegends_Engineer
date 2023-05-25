@@ -11,6 +11,8 @@
 #include "Config.h"
 #include "auto.h"
 
+#define CATCH_DEBUG_FLAG 0
+
 //拨矿电机方向
 #define CATCH_UPLOAD_MOTOR_TURN 1
 //伸爪电机方向
@@ -24,9 +26,9 @@
 //左右的遥控器通道号码
 #define CATCH_Y_CHANNEL 0
 //
-#define CATCH_Z_CHANNEL 4
+#define CATCH_Z_CHANNEL 2
 
-#define CATCH_OPEN_RC_SCALE 100 // 遥控器乘以该比例发送到can上
+#define CATCH_OPEN_RC_SCALE 10 // 遥控器乘以该比例发送到can上
 
 //选择取矿机构状态 开关通道号
 #define CATCH_MODE_CHANNEL 1
@@ -35,18 +37,18 @@
 
 
 //拨矿电机速度环PID
-#define MOTIVE_MOTOR_SPEED_PID_KP 1000.0f
+#define MOTIVE_MOTOR_SPEED_PID_KP 6000.0f
 #define MOTIVE_MOTOR_SPEED_PID_KI 0.0f
 #define MOTIVE_MOTOR_SPEED_PID_KD 0.1f
 #define MOTIVE_MOTOR_SPEED_PID_MAX_IOUT 2.0f
-#define MOTIVE_MOTOR_SPEED_PID_MAX_OUT 6000.0f
+#define MOTIVE_MOTOR_SPEED_PID_MAX_OUT 12000.0f
 
 //拨矿电机角度环PID
-#define MOTIVE_MOTOR_ANGLE_PID_KP 1000.0f 
+#define MOTIVE_MOTOR_ANGLE_PID_KP 5.0f 
 #define MOTIVE_MOTOR_ANGLE_PID_KI 0.0f
 #define MOTIVE_MOTOR_ANGLE_PID_KD 1.0f
 #define MOTIVE_MOTOR_ANGLE_PID_MAX_IOUT 1.0f
-#define MOTIVE_MOTOR_ANGLE_PID_MAX_OUT 6000.0f
+#define MOTIVE_MOTOR_ANGLE_PID_MAX_OUT 12000.0f
 
 //m3508转化成底盘速度(m/s)的比例，
 #define M3508_MOTOR_RPM_TO_VECTOR 0.000415809748903494517209f
@@ -54,14 +56,14 @@
 #define CATCH_MOTOR_RPM_TO_VECTOR_SEN M3508_MOTOR_RPM_TO_VECTOR
 
 // 各电机角度限幅
-#define SPIN_LIMIT_ANGLE 0.0f
-#define YAW_LIMIT_ANGLE 0.0f
-#define SUCTION_LIMIT_ANGLE 0.0f
+#define SPIN_LIMIT_ANGLE 60000.0f
+#define YAW_LIMIT_ANGLE 30000.0f
+#define SUCTION_LIMIT_ANGLE 30000.0f
 
 #define MOTOR_SPEED_TO_CATCH_SPEED 0.25f
 
 //拨矿过程最大速度
-#define NORMAL_MAX_CATCH_SPEED 4.0f //2.0
+#define NORMAL_MAX_CATCH_SPEED 1.0f //2.0
 //伸爪最大速度
 #define NORMAL_MAX_STRETCH_SPEED 4.0f //2.0
 
@@ -148,6 +150,8 @@ public:
     void set_control();
 
     void auto_control(auto_mode_e *auto_mode);
+
+    void motor_angle_limit(Mine_motor *motor);
     //行为模式
     void behaviour_control_set(fp32 *vcatch_set, fp32 *vyaw_set, fp32 *vsuction_set);
 

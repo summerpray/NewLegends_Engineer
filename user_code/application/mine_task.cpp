@@ -40,7 +40,7 @@ void mine_task(void *pvParameters)
         minepush.solve();
         minecatch.solve();
         //电流输出
-        minepush.output();
+        // minepush.output();
         minecatch.output();
         //系统延时
         vTaskDelay(MINE_CONTROL_TIME_MS);
